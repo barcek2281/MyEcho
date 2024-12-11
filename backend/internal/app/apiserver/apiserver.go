@@ -1,9 +1,9 @@
 package apiserver
 
 import (
+	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
-	"io"
 	"net/http"
 )
 
@@ -45,9 +45,25 @@ func (s *APIserver) ConfigureRouter() {
 	s.router.HandleFunc("/hello", s.handleHello())
 }
 
+// --CHAT-GPT
 func (s *APIserver) handleHello() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Info("handle /hello URL")
-		io.WriteString(w, "Hello World!")
+
+		// Подготовим данные для отправки в формате JSON
+		response := map[string]string{
+			"message": "Hello World!",
+		}
+
+		// Установим заголовок Content-Type для ответа
+		w.Header().Set("Content-Type", "application/json")
+		//io.WriteString(w, "HI")
+
+		// Сериализуем данные в JSON и отправим их клиенту
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			// В случае ошибки логируем её и возвращаем HTTP-ошибку
+			s.logger.Error("failed to write JSON response:", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
 	}
 }
