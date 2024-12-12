@@ -46,6 +46,7 @@ func (s *APIserver) ConfigureLogger() error {
 
 func (s *APIserver) ConfigureRouter() {
 	s.router.HandleFunc("/hello", s.handleHello())
+	s.router.HandleFunc("/post", s.post())
 }
 
 // --CHAT-GPT
@@ -73,29 +74,29 @@ func (s *APIserver) handleHello() http.HandlerFunc {
 				s.logger.Error(err)
 				http.Error(w, "lol", http.StatusInternalServerError)
 			}
-		case "POST":
-			s.logger.Info("handle /hello POST")
-			var data map[string]interface{}
-
-			if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-				s.logger.Error("Empty data")
-				return
-			}
-
-			// Print send data
-			prettyJson, err := json.MarshalIndent(data, "", "  ")
-			if err != nil {
-				s.logger.Error(err)
-			}
-			fmt.Println(string(prettyJson))
-
-			if err := json.NewEncoder(w).Encode(response); err != nil {
-				s.logger.Error(err)
-			}
-
 		default:
 			s.logger.Info("Unhandled Unknown method /hello")
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		}
+	}
+}
+
+func (s *APIserver) post() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			s.logger.Warn("Unhandled method " + r.Method)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		var data map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+			s.logger.Error(err)
+		}
+
+		prettyJson, err := json.MarshalIndent(data, "", "  ")
+		if err != nil {
+			s.logger.Error(err)
+		}
+		fmt.Println(string(prettyJson))
 	}
 }
