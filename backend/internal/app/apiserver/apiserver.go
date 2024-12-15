@@ -3,6 +3,7 @@ package apiserver
 import (
 	"encoding/json"
 	"fmt"
+	"text/template"
 
 	"net/http"
 
@@ -45,8 +46,25 @@ func (s *APIserver) ConfigureLogger() error {
 }
 
 func (s *APIserver) ConfigureRouter() {
+	s.router.HandleFunc("/", s.mainPage())
 	s.router.HandleFunc("/hello", s.handleHello())
-	s.router.HandleFunc("/post", s.post())
+	s.router.HandleFunc("/register", s.register())
+}
+
+func (s *APIserver) mainPage() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data := "Go Template"
+		tmpl, err := template.ParseFiles("internal/app/templates/index.html")
+		if err != nil {
+			s.logger.Error(err)
+			return
+		}
+		err = tmpl.Execute(w, data)
+		if err != nil {
+			s.logger.Error(err)
+			return
+		}
+	}
 }
 
 // --CHAT-GPT
@@ -81,7 +99,7 @@ func (s *APIserver) handleHello() http.HandlerFunc {
 	}
 }
 
-func (s *APIserver) post() http.HandlerFunc {
+func (s *APIserver) register() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			s.logger.Warn("Unhandled method " + r.Method)
