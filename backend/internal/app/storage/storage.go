@@ -7,8 +7,9 @@ import (
 )
 
 type Storage struct {
-	DatabaseURL string
-	db          *sql.DB
+	DatabaseURL    string
+	db             *sql.DB
+	userRepository *UserRepository
 }
 
 // New Config
@@ -16,13 +17,6 @@ func New(databaseURL string) *Storage {
 
 	return &Storage{DatabaseURL: databaseURL}
 }
-
-//CREATE TABLE users (
-//id bigserial not null primary key,
-//email varchar not null unique,
-//login varchar not null,
-//password varchar not null
-//);
 
 func (s *Storage) Open() error {
 	db, err := sql.Open("postgres", s.DatabaseURL)
@@ -41,4 +35,14 @@ func (s *Storage) Open() error {
 
 func (s *Storage) Close() {
 	s.db.Close()
+}
+
+func (s *Storage) User() *UserRepository {
+	if s.userRepository != nil {
+		return s.userRepository
+	}
+	s.userRepository = &UserRepository{
+		storage: s,
+	}
+	return s.userRepository
 }
