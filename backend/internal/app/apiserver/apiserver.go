@@ -52,9 +52,10 @@ func (s *APIserver) ConfigureLogger() error {
 }
 
 func (s *APIserver) ConfigureRouter() {
-	s.router.HandleFunc("/", s.controller.MainPage(s))
-	s.router.HandleFunc("/hello", s.controller.handleHello(s))
-	s.router.HandleFunc("/register", s.controller.register(s))
+	s.router.HandleFunc("/", s.controller.MainPage(s)).Methods("GET")
+	s.router.HandleFunc("/hello", s.controller.handleHello(s)).Methods("GET")
+	s.router.HandleFunc("/register", s.controller.registerUser(s)).Methods("POST")
+	s.router.HandleFunc("/register", s.controller.registerPage(s)).Methods("GET")
 }
 
 func (s *APIserver) ConfigureStorage() error {

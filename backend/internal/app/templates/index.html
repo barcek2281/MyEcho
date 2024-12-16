@@ -8,27 +8,8 @@
     <link rel="stylesheet" href="internal/app/templates/style.css">
 </head>
 <body>
-<h1>Register</h1>
-<form id="registerForm">
-    <input type="text" id="login" placeholder="Username" required />
-    <input type="text" id="email" placeholder="Username" required />
-    <input type="password" id="password" placeholder="Password" required />
-    <button type="submit">Register</button>
-</form>
-<script>
-    document.getElementById('registerForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const username = document.getElementById('login').value;
-        const password = document.getElementById('password').value;
-        const email = document.getElementById('email').value;
-        const response = await fetch('/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({email, username, password })
-        });
-        if (response.ok) alert('Registered successfully!');
-        else alert('Failed to register');
-    });
-</script>
+<h1>Main Page</h1>
+<a href="/register">Register</a>
+<a href="/users">Users</a>
 </body>
 </html>
