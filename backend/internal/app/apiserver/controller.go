@@ -30,6 +30,7 @@ func (ctrl *Controller) MainPage(s *APIserver) http.HandlerFunc {
 			s.Logger.Error(err)
 			return
 		}
+		s.Logger.Info("handle MainPage GET")
 	}
 }
 
@@ -102,5 +103,29 @@ func (ctrl *Controller) registerUser(s *APIserver) http.HandlerFunc {
 		}
 		w.WriteHeader(http.StatusCreated)
 		s.Logger.Info("handle /register POST")
+	}
+}
+
+func (ctrl *Controller) getAllUsers(s *APIserver) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		all, err := s.storage.User().GetAll(20)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			s.Logger.Error(err)
+			return
+		}
+		w.Header().Set("Content-Type", "http")
+		tmpl, err := template.ParseFiles("internal/app/templates/users.html")
+		if err != nil {
+			s.Logger.Error(err)
+			return
+		}
+		err = tmpl.Execute(w, all)
+		if err != nil {
+			s.Logger.Error(err)
+			return
+		}
+		s.Logger.Info("handle /getAllUsers GET")
+
 	}
 }

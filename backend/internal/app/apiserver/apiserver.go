@@ -43,6 +43,7 @@ func (s *APIserver) Start() error {
 }
 
 func (s *APIserver) ConfigureLogger() error {
+	// Обычная конфигурация Логгера
 	level, err := logrus.ParseLevel(s.config.LogLevel)
 	if err != nil {
 		return err
@@ -54,8 +55,11 @@ func (s *APIserver) ConfigureLogger() error {
 func (s *APIserver) ConfigureRouter() {
 	s.router.HandleFunc("/", s.controller.MainPage(s)).Methods("GET")
 	s.router.HandleFunc("/hello", s.controller.handleHello(s)).Methods("GET")
+	// Надо будет поменять название функции
 	s.router.HandleFunc("/register", s.controller.registerUser(s)).Methods("POST")
 	s.router.HandleFunc("/register", s.controller.registerPage(s)).Methods("GET")
+
+	s.router.HandleFunc("/users", s.controller.getAllUsers(s)).Methods("GET")
 }
 
 func (s *APIserver) ConfigureStorage() error {
