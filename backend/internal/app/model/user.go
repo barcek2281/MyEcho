@@ -23,7 +23,7 @@ func (u *User) Validate() error {
 
 func (u *User) BeforeCreate() error {
 	if len(u.Password) > 0 {
-		enc, err := encrypt(u.Password)
+		enc, err := Encrypt(u.Password)
 		if err != nil {
 			return err
 		}
@@ -32,7 +32,7 @@ func (u *User) BeforeCreate() error {
 	return nil
 }
 
-func encrypt(password string) (string, error) {
+func Encrypt(password string) (string, error) {
 	b, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	if err != nil {
 		return "", err

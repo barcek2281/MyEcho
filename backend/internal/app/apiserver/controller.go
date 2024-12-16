@@ -129,3 +129,63 @@ func (ctrl *Controller) getAllUsers(s *APIserver) http.HandlerFunc {
 
 	}
 }
+
+func (ctrl *Controller) UpdateUser(s *APIserver) http.HandlerFunc {
+	type Request struct {
+		Email    string `json:"email"`
+		NewLogin string `json:"newLogin"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req := Request{}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			s.Logger.Error(err)
+			return
+		}
+
+		err := s.storage.User().ChangeLoginByEmail(req.NewLogin, req.Email)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			s.Logger.Error(err)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Возвращаем новый логин, чтобы обновить таблицу на клиенте
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{
+			"email":    req.Email,
+			"newLogin": req.NewLogin,
+		})
+		s.Logger.Info("User login updated successfully")
+	}
+}
+
+func (ctrl *Controller) DeleteUser(s *APIserver) http.HandlerFunc {
+	type Request struct {
+		Email string `json:"email"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req := Request{}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			s.Logger.Error(err)
+			return
+		}
+
+		err := s.storage.User().DeleteByEmail(req.Email)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			s.Logger.Error(err)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{
+			"status": "OK",
+			"msg":    "user deleted",
+		})
+		s.Logger.Info("User deleted successfully")
+	}
+}

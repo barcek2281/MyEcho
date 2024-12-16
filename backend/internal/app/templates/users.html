@@ -32,6 +32,24 @@
         h1 {
             color: #333;
         }
+        form {
+            margin-top: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input, button {
+            padding: 8px;
+            width: 100%;
+            max-width: 300px;
+            margin-bottom: 10px;
+        }
+
     </style>
 </head>
 <body>
@@ -54,8 +72,86 @@
     {{end}}
     </tbody>
 </table>
-<p>back to <a href="/">Main Page</a></p>
+
+<h2>Delete User</h2>
+<form id="deleteForm">
+    <div class="input-group">
+        <label for="deleteEmail">Email:</label>
+        <input type="email" id="deleteEmail" placeholder="Enter user's email" required>
+    </div>
+    <button type="submit">Delete User</button>
+</form>
+
+<h2>Update User Login</h2>
+<form id="updateForm">
+    <div class="input-group">
+        <label for="updateEmail">Email:</label>
+        <input type="email" id="updateEmail" placeholder="Enter user's email" required>
+    </div>
+
+    <div class="input-group">
+        <label for="newLogin">New Login:</label>
+        <input type="text" id="newLogin" placeholder="Enter new login" required>
+    </div>
+    <button type="submit">Update Login</button>
+</form>
+
+<script>
+    // Handle delete user form submission
+    document.getElementById("deleteForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById("deleteEmail").value;
 
 
+        try {
+            const response = await fetch('/deleteUser', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            });
+
+            if (response.ok) {
+                alert('User deleted successfully!');
+                location.reload(); // Refresh the page to show updated user list
+            } else {
+                const error = await response.text();
+                alert('Error deleting user: ' + error);
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Failed to delete user.');
+        }
+    });
+
+    // Handle update user form submission
+    document.getElementById("updateForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById("updateEmail").value;
+
+        const newLogin = document.getElementById("newLogin").value;
+
+        try {
+            const response = await fetch('/updateUserLogin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, newLogin }),
+            });
+
+            if (response.ok) {
+                alert('User login updated successfully!');
+                location.reload(); // Refresh the page to show updated user list
+            } else {
+                const error = await response.text();
+                alert('Error updating login: ' + error);
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Failed to update login.');
+        }
+    });
+</script>
+<p>back to <a href="/">Main page</a> </p>
 </body>
 </html>

@@ -1,8 +1,8 @@
 package storage
 
 import (
+	"fmt"
 	"github.com/barcek2281/MyEcho/internal/app/model"
-	"log"
 )
 
 // UserRepository
@@ -38,25 +38,51 @@ func (r *UserRepository) FindByEmail(email string) (*model.User, error) {
 	return u, nil
 }
 
-func (r *UserRepository) ChangeLoginByEmail(newLogin, email, encPassword string) (*model.User, error) {
-	u := &model.User{}
-	if err := r.storage.db.QueryRow("UPDATE users SET login = $1 WHere email = $2 AND password = $3", newLogin, email, encPassword).Scan(&u.ID); err != nil {
-		log.Fatalln("CANNOT FIND SUCH A USER", err)
-		return nil, err
+func (r *UserRepository) ChangeLoginByEmail(newLogin, email string) error {
+	// Выполнение запроса для обновления записи
+	result, err := r.storage.db.Exec("UPDATE users SET login = $1 WHERE email = $2", newLogin, email)
+	if err != nil {
+		// Возвращаем ошибку, если запрос не удался
+		return fmt.Errorf("failed to update login for email %s: %w", email, err)
 	}
-	return u, nil
-}
 
-func (r *UserRepository) DeleteByEmailAndPasswd(email, encPassword string) error {
-	if err := r.storage.db.QueryRow("DELETE FROM users WHERE email = $1 AND password = $2", email, encPassword).Scan(); err != nil {
-		log.Fatalln("CANNOT FIND SUCH A USER", err)
-		return err
+	// Проверяем, сколько строк было обновлено
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("no user found with email %s", email)
+	}
+
 	return nil
 }
 
+func (r *UserRepository) DeleteByEmail(email string) error {
+
+	result, err := r.storage.db.Exec("DELETE FROM users WHERE email = $1", email)
+	if err != nil {
+		// Возвращаем ошибку, если запрос не удался
+		return fmt.Errorf("failed to delete user %s: %w", email, err)
+	}
+
+	// Проверяем, сколько строк было обновлено
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("no user found with email %s", email)
+	}
+
+	return nil
+
+}
+
 func (r *UserRepository) GetAll(limit int) ([]*model.User, error) {
-	rows, err := r.storage.db.Query("SELECT id, email, login, password FROM users LIMIT $1", limit)
+	rows, err := r.storage.db.Query("SELECT id, email, login, password FROM users ORDER BY id LIMIT $1", limit)
 	if err != nil {
 		return nil, err
 	}
