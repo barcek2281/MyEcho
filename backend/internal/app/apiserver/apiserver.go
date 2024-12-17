@@ -1,8 +1,9 @@
 package apiserver
 
 import (
-	"github.com/barcek2281/MyEcho/internal/app/storage"
 	"net/http"
+
+	"github.com/barcek2281/MyEcho/internal/app/storage"
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -14,6 +15,10 @@ type APIserver struct {
 	router     *mux.Router
 	controller *Controller
 	storage    *storage.Storage
+}
+
+func Zufar() {
+
 }
 
 func NewAPIserver(config *Config) *APIserver {
@@ -36,7 +41,6 @@ func (s *APIserver) Start() error {
 		s.Logger.Errorf("failed to configure storage: %v", err)
 		return err
 	}
-
 
 	s.Logger.Info("Starting API server: http://localhost", s.config.BinAddr)
 
