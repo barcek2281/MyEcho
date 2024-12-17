@@ -17,7 +17,7 @@ type APIserver struct {
 	storage    *storage.Storage
 }
 
-func Zufar() {
+func ZufarAyanat() {
 
 }
 
