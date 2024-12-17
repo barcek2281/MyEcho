@@ -7,6 +7,7 @@
 *.dll
 *.so
 *.dylib
+MyEcho
 
 # Test binary, built with `go test -c`
 *.test
@@ -25,3 +26,4 @@ go.work.sum
 .env
 .idea
 .vscode
+*.toml

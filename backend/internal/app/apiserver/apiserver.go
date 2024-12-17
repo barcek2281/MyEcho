@@ -37,6 +37,7 @@ func (s *APIserver) Start() error {
 		return err
 	}
 
+
 	s.Logger.Info("Starting API server: http://localhost", s.config.BinAddr)
 
 	return http.ListenAndServe(s.config.BinAddr, s.router)
@@ -54,7 +55,10 @@ func (s *APIserver) ConfigureLogger() error {
 
 func (s *APIserver) ConfigureRouter() {
 	s.router.HandleFunc("/", s.controller.MainPage(s)).Methods("GET")
+	// мне бы ноормально называть функции, в будущем надо добавить под роутеры :(
 	s.router.HandleFunc("/hello", s.controller.handleHello(s)).Methods("GET")
+	s.router.HandleFunc("/hello", s.controller.handleHelloPost(s)).Methods("POST")
+
 	// Надо будет поменять название функции
 	s.router.HandleFunc("/register", s.controller.registerUser(s)).Methods("POST")
 	s.router.HandleFunc("/register", s.controller.registerPage(s)).Methods("GET")
@@ -66,7 +70,7 @@ func (s *APIserver) ConfigureRouter() {
 
 func (s *APIserver) ConfigureStorage() error {
 	st := storage.New(s.config.DataBaseURL)
-	if err := st.Open(); err != nil {
+	if err := st.Open(); err != nil { // Ping db
 		return err
 	}
 	s.storage = st
