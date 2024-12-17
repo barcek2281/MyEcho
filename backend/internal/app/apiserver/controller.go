@@ -3,10 +3,11 @@ package apiserver
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/barcek2281/MyEcho/internal/app/model"
-	_ "github.com/sirupsen/logrus"
 	"net/http"
 	"text/template"
+
+	"github.com/barcek2281/MyEcho/internal/app/model"
+	_ "github.com/sirupsen/logrus"
 )
 
 type Controller struct {
@@ -20,7 +21,7 @@ func (ctrl *Controller) MainPage(s *APIserver) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		//data := "Go Template"
-		tmpl, err := template.ParseFiles("internal/app/templates/index.html")
+		tmpl, err := template.ParseFiles("./templates/index.html")
 		if err != nil {
 			s.Logger.Error(err)
 			return
@@ -41,7 +42,7 @@ func (ctrl *Controller) handleHello(s *APIserver) http.HandlerFunc {
 			"status":  "OK",
 			"message": "Hello World!",
 		}
-		s.Logger.Warn("handle /hello")
+		s.Logger.Info("handle /hello")
 
 		// Print query
 		prettyJson, err := json.MarshalIndent(r.URL.Query(), "", "  ")
@@ -60,9 +61,39 @@ func (ctrl *Controller) handleHello(s *APIserver) http.HandlerFunc {
 	}
 }
 
+func (ctrl *Controller) handleHelloPost(s *APIserver) http.HandlerFunc {
+	type Request struct {
+		Msg string `json:"msg"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req := Request{}
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"status": "not ok", "msg": "we got a cringe message"})
+			return
+		}
+
+		if req.Msg == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"status": "not ok", "msg": "we got a empty message "})
+			return
+		}
+
+		fmt.Println(req)
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"status": "ok", "msg": "we got the message"})
+
+		s.Logger.Info("handle /hello POST")
+
+	}
+
+}
+
 func (ctrl *Controller) registerPage(s *APIserver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tmpl, err := template.ParseFiles("internal/app/templates/register.html")
+		tmpl, err := template.ParseFiles("./templates/register.html")
 		if err != nil {
 			s.Logger.Error(err)
 			return
@@ -115,7 +146,7 @@ func (ctrl *Controller) getAllUsers(s *APIserver) http.HandlerFunc {
 			return
 		}
 		w.Header().Set("Content-Type", "http")
-		tmpl, err := template.ParseFiles("internal/app/templates/users.html")
+		tmpl, err := template.ParseFiles("./templates/users.html")
 		if err != nil {
 			s.Logger.Error(err)
 			return

@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User List</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
         table {
             border-collapse: collapse;
             width: 100%;
@@ -29,9 +25,6 @@
         tr:hover {
             background-color: #f1f1f1;
         }
-        h1 {
-            color: #333;
-        }
         form {
             margin-top: 20px;
         }
@@ -40,7 +33,6 @@
         }
         label {
             display: block;
-            font-weight: bold;
             margin-bottom: 5px;
         }
         input, button {
@@ -103,12 +95,11 @@
 
         const email = document.getElementById("deleteEmail").value;
 
-
         try {
             const response = await fetch('/deleteUser', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
+                body: JSON.stringify({ email: email }),
             });
 
             if (response.ok) {
