@@ -20,12 +20,13 @@ func NewController() *Controller {
 func (ctrl *Controller) MainPage(s *APIserver) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		//data := "Go Template"
 		tmpl, err := template.ParseFiles("./templates/index.html")
+
 		if err != nil {
 			s.Logger.Error(err)
 			return
 		}
+
 		err = tmpl.Execute(w, nil)
 		if err != nil {
 			s.Logger.Error(err)
@@ -129,6 +130,7 @@ func (ctrl *Controller) registerUser(s *APIserver) http.HandlerFunc {
 
 		if err := s.storage.User().Create(&u); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
+			
 			s.Logger.Error(err)
 			return
 		}

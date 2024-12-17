@@ -104,7 +104,7 @@
 
             if (response.ok) {
                 alert('User deleted successfully!');
-                location.reload(); // Refresh the page to show updated user list
+                location.reload(); // Обновление страницы
             } else {
                 const error = await response.text();
                 alert('Error deleting user: ' + error);
@@ -132,7 +132,7 @@
 
             if (response.ok) {
                 alert('User login updated successfully!');
-                location.reload(); // Refresh the page to show updated user list
+                location.reload(); // Обновление страницы
             } else {
                 const error = await response.text();
                 alert('Error updating login: ' + error);
