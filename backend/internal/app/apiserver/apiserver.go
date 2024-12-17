@@ -17,10 +17,6 @@ type APIserver struct {
 	storage    *storage.Storage
 }
 
-func ZufarAyanat() {
-
-}
-
 func NewAPIserver(config *Config) *APIserver {
 	return &APIserver{
 		config:     config,
