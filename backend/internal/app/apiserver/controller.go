@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"text/template"
 
 	"github.com/barcek2281/MyEcho/internal/app/model"
@@ -63,25 +64,22 @@ func (ctrl *Controller) handleHello(s *APIserver) http.HandlerFunc {
 }
 
 func (ctrl *Controller) handleHelloPost(s *APIserver) http.HandlerFunc {
-	type Request struct {
-		Msg string `json:"msg"`
-	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req := Request{}
+		req := map[string]string{}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"status": "not ok", "msg": "we got a cringe message"})
+			json.NewEncoder(w).Encode(map[string]string{"status": "not ok", "msg": "we got a cringe/error message"})
 			return
 		}
 
-		if req.Msg == "" {
+		if _, ok := req["msg"]; !ok {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"status": "not ok", "msg": "we got a empty message "})
+			json.NewEncoder(w).Encode(map[string]string{"status": "not ok", "msg": "we didnt get a message "})
 			return
 		}
 
-		fmt.Println(req)
+		fmt.Println(req["msg"])
 
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]string{"status": "ok", "msg": "we got the message"})
@@ -130,7 +128,8 @@ func (ctrl *Controller) registerUser(s *APIserver) http.HandlerFunc {
 
 		if err := s.storage.User().Create(&u); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			
+			w.Header().Set("Content-Type", "application/json")
+			//json.NewEncoder(w).Encode(map[string]string{"err": string(err)})
 			s.Logger.Error(err)
 			return
 		}
@@ -220,5 +219,32 @@ func (ctrl *Controller) DeleteUser(s *APIserver) http.HandlerFunc {
 			"msg":    "user deleted",
 		})
 		s.Logger.Info("User deleted successfully")
+	}
+}
+
+func (ctrl *Controller) FindUser(s *APIserver) http.HandlerFunc {
+	type Request struct {
+		Email string `json:"email"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req := Request{}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		u, err := s.storage.User().FindByEmail(req.Email)
+		if err != nil {
+			s.Logger.Warn("unhandle /findUser POST", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "appication/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"id":    strconv.Itoa(u.ID),
+			"email": u.Email,
+			"login": u.Login,
+		})
+		s.Logger.Info("handle /findUser POST")
+
 	}
 }

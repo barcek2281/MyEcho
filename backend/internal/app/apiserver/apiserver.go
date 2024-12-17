@@ -66,6 +66,7 @@ func (s *APIserver) ConfigureRouter() {
 	s.router.HandleFunc("/users", s.controller.getAllUsers(s)).Methods("GET")
 	s.router.HandleFunc("/updateUserLogin", s.controller.UpdateUser(s)).Methods("POST")
 	s.router.HandleFunc("/deleteUser", s.controller.DeleteUser(s)).Methods("POST")
+	s.router.HandleFunc("/findUser", s.controller.FindUser(s)).Methods("POST")
 }
 
 func (s *APIserver) ConfigureStorage() error {
