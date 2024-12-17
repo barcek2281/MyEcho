@@ -130,7 +130,7 @@ func (ctrl *Controller) registerUser(s *APIserver) http.HandlerFunc {
 
 		if err := s.storage.User().Create(&u); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			
+
 			s.Logger.Error(err)
 			return
 		}
