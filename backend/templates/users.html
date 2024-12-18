@@ -88,7 +88,9 @@
     </div>
     <button type="submit">Update Login</button>
 </form>
-<p id="result"></p>
+<p id="resultId">ID: </p>
+<p id="resultEmail">Email: </p>
+<p id="resultLogin">Login: </p>
 <script>
     // Handle delete user form submission
     document.getElementById("deleteForm").addEventListener("submit", async (e) => {
@@ -149,7 +151,9 @@
         e.preventDefault();
 
         const email = document.getElementById("findEmail").value;
-        const res = document.getElementById("result")
+        const resId = document.getElementById("resultId")
+        const resEmail = document.getElementById("resultEmail")
+        const resLogin = document.getElementById("resultLogin")
 
         try {
             const response = await fetch('/findUser', {
@@ -160,8 +164,10 @@
 
             if (response.ok) {
                 const data = await response.json(); // Await the JSON response
-                res.textContent = data["login"]
-                console.log(data["login"])
+                resId.textContent += data["id"]
+                resEmail.textContent += data["email"]
+                resLogin.textContent += data["login"]
+                // console.log(data["login"])
             } else {
                 const error = await response.text();
                 alert('Error finding login: ' + error);
