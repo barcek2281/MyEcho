@@ -29,7 +29,7 @@ func (s *Storage) Open() error {
 		log.Fatal(err)
 		return err
 	}
-
+	defer db.Close()
 	s.db = db
 	return nil
 }
