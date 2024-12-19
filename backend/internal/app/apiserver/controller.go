@@ -30,12 +30,14 @@ func (ctrl *Controller) MainPage(s *server) http.HandlerFunc {
 			s.Logger.Error(err)
 			return
 		}
-
+		
 		err = tmpl.Execute(w, nil)
 		if err != nil {
 			s.Logger.Error(err)
 			return
 		}
+
+		//w.Header().Set("c")
 		s.Logger.Info("handle MainPage GET")
 	}
 }
@@ -130,17 +132,15 @@ func (ctrl *Controller) registerUser(s *server) http.HandlerFunc {
 		}
 
 		if err := s.storage.User().Create(&u); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Header().Set("Content-Type", "application/json")
-			//json.NewEncoder(w).Encode(map[string]string{"err": string(err)})
-			s.Logger.Error(err)
+			s.Error(w, r, http.StatusBadRequest, err)
+			s.Logger.Warn(err)
 			return
 		}
 
 		session, err := s.Session.Get(r, sessionName)
 		if err != nil {
 			s.Error(w, r, 404, err)
-			s.Logger.Error(err)
+			s.Logger.Warn(err)
 			return
 		}
 
@@ -195,9 +195,7 @@ func (ctrl *Controller) UpdateUser(s *server) http.HandlerFunc {
 
 		err := s.storage.User().ChangeLoginByEmail(req.NewLogin, req.Email)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			s.Logger.Error(err)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			s.Error(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -218,16 +216,17 @@ func (ctrl *Controller) DeleteUser(s *server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := Request{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			s.Error(w, r, http.StatusBadRequest, err)
 			s.Logger.Error(err)
 			return
 		}
 
 		err := s.storage.User().DeleteByEmail(req.Email)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			s.Error(w, r, http.StatusBadRequest, err)
+			
 			s.Logger.Error(err)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			
 			return
 		}
 
@@ -252,8 +251,8 @@ func (ctrl *Controller) FindUser(s *server) http.HandlerFunc {
 		}
 		u, err := s.storage.User().FindByEmail(req.Email)
 		if err != nil {
+			s.Error(w, r, http.StatusBadRequest, err)
 			s.Logger.Warn("unhandle /findUser POST", err)
-			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		w.Header().Set("Content-Type", "appication/json")

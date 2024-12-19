@@ -155,7 +155,7 @@
         const resEmail = document.getElementById("resultEmail")
         const resLogin = document.getElementById("resultLogin")
 
-        try {
+    
             const response = await fetch('/findUser', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -169,13 +169,10 @@
                 resLogin.textContent = "login: " +  data["login"]
                 // console.log(data["login"])
             } else {
-                const error = await response.text();
-                alert('Error finding login: ' + error);
+                const error = await response.json();
+                alert('Error finding login: ' + error["error"]);
             }
-        } catch (err) {
-            console.error(err);
-            alert('Failed to find user.');
-        }
+        
     });
 </script>
 <p>back to <a href="/">Main page</a> </p>
