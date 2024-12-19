@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User List</title>
+    <title>MyEcho | User List</title>
     <style>
         table {
             border-collapse: collapse;
@@ -13,17 +13,9 @@
         th, td {
             border: 1px solid #ddd;
             padding: 8px;
-            text-align: left;
         }
         th {
-            background-color: #f4f4f4;
             font-weight: bold;
-        }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        tr:hover {
-            background-color: #f1f1f1;
         }
         form {
             margin-top: 20px;
@@ -71,7 +63,7 @@
         <label for="deleteEmail">Email:</label>
         <input type="email" id="deleteEmail" placeholder="Enter user's email" required>
     </div>
-    <button type="submit">Delete User</button>
+    <button type="submit">delete user</button>
 </form>
 
 <h2>Update User Login</h2>
@@ -85,9 +77,20 @@
         <label for="newLogin">New Login:</label>
         <input type="text" id="newLogin" placeholder="Enter new login" required>
     </div>
-    <button type="submit">Update Login</button>
+    <button type="submit">update login</button>
 </form>
 
+<h2>Get user by email</h2>
+<form id="findForm">
+    <div class="input-group">
+        <label for="updateEmail">Email:</label>
+        <input type="email" id="findEmail" placeholder="Enter user's email" required>
+    </div>
+    <button type="submit"> find user </button>
+</form>
+<p id="resultId"></p>
+<p id="resultEmail"></p>
+<p id="resultLogin"></p>
 <script>
     // Handle delete user form submission
     document.getElementById("deleteForm").addEventListener("submit", async (e) => {
@@ -140,6 +143,38 @@
         } catch (err) {
             console.error(err);
             alert('Failed to update login.');
+        }
+    });
+
+    // Handle find user form submission
+    document.getElementById("findForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById("findEmail").value;
+        const resId = document.getElementById("resultId")
+        const resEmail = document.getElementById("resultEmail")
+        const resLogin = document.getElementById("resultLogin")
+
+        try {
+            const response = await fetch('/findUser', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email }),
+            });
+
+            if (response.ok) {
+                const data = await response.json(); // Await the JSON response
+                resId.textContent = "ID: " + data["id"]
+                resEmail.textContent = "email: " +  data["email"]
+                resLogin.textContent = "login: " +  data["login"]
+                // console.log(data["login"])
+            } else {
+                const error = await response.text();
+                alert('Error finding login: ' + error);
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Failed to find user.');
         }
     });
 </script>

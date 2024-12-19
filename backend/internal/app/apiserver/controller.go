@@ -4,20 +4,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"text/template"
 
 	"github.com/barcek2281/MyEcho/internal/app/model"
 	_ "github.com/sirupsen/logrus"
 )
 
-type Controller struct {
-}
+const sessionName = "MyEcho"
+
+var controller Controller
+
+type Controller struct {}
 
 func NewController() *Controller {
 	return &Controller{}
 }
 
-func (ctrl *Controller) MainPage(s *APIserver) http.HandlerFunc {
+func (ctrl *Controller) MainPage(s *server) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		tmpl, err := template.ParseFiles("./templates/index.html")
@@ -36,7 +40,7 @@ func (ctrl *Controller) MainPage(s *APIserver) http.HandlerFunc {
 	}
 }
 
-func (ctrl *Controller) handleHello(s *APIserver) http.HandlerFunc {
+func (ctrl *Controller) handleHello(s *server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		response := map[string]string{
@@ -62,26 +66,23 @@ func (ctrl *Controller) handleHello(s *APIserver) http.HandlerFunc {
 	}
 }
 
-func (ctrl *Controller) handleHelloPost(s *APIserver) http.HandlerFunc {
-	type Request struct {
-		Msg string `json:"msg"`
-	}
+func (ctrl *Controller) handleHelloPost(s *server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		req := Request{}
+		req := map[string]string{}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"status": "not ok", "msg": "we got a cringe message"})
+			json.NewEncoder(w).Encode(map[string]string{"status": "not ok", "msg": "we got a cringe/error message"})
 			return
 		}
 
-		if req.Msg == "" {
+		if _, ok := req["msg"]; !ok {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"status": "not ok", "msg": "we got a empty message "})
+			json.NewEncoder(w).Encode(map[string]string{"status": "not ok", "msg": "we didnt get a message "})
 			return
 		}
 
-		fmt.Println(req)
+		fmt.Println(req["msg"])
 
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]string{"status": "ok", "msg": "we got the message"})
@@ -92,7 +93,7 @@ func (ctrl *Controller) handleHelloPost(s *APIserver) http.HandlerFunc {
 
 }
 
-func (ctrl *Controller) registerPage(s *APIserver) http.HandlerFunc {
+func (ctrl *Controller) registerPage(s *server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tmpl, err := template.ParseFiles("./templates/register.html")
 		if err != nil {
@@ -108,7 +109,7 @@ func (ctrl *Controller) registerPage(s *APIserver) http.HandlerFunc {
 	}
 }
 
-func (ctrl *Controller) registerUser(s *APIserver) http.HandlerFunc {
+func (ctrl *Controller) registerUser(s *server) http.HandlerFunc {
 	type Request struct {
 		Login    string `json:"login"`
 		Email    string `json:"email"`
@@ -117,7 +118,7 @@ func (ctrl *Controller) registerUser(s *APIserver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := Request{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			s.Error(w, r, http.StatusBadRequest, err)
 			s.Logger.Error(err)
 			return
 		}
@@ -130,20 +131,36 @@ func (ctrl *Controller) registerUser(s *APIserver) http.HandlerFunc {
 
 		if err := s.storage.User().Create(&u); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			
+			w.Header().Set("Content-Type", "application/json")
+			//json.NewEncoder(w).Encode(map[string]string{"err": string(err)})
 			s.Logger.Error(err)
 			return
 		}
-		w.WriteHeader(http.StatusCreated)
+
+		session, err := s.Session.Get(r, sessionName)
+		if err != nil {
+			s.Error(w, r, 404, err)
+			s.Logger.Error(err)
+			return
+		}
+
+		session.Values["user_id"] = u.ID
+		if err := s.Session.Save(r, w, session); err != nil {
+			s.Error(w, r, 404, err)
+			return
+		}
+		s.Respond(w, r, http.StatusCreated, map[string]string{"status": "Succesfully, created"})
+		
 		s.Logger.Info("handle /register POST")
 	}
 }
 
-func (ctrl *Controller) getAllUsers(s *APIserver) http.HandlerFunc {
+func (ctrl *Controller) getAllUsers(s *server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		all, err := s.storage.User().GetAll(20)
+		
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			s.Error(w, r, http.StatusNotFound, err)
 			s.Logger.Error(err)
 			return
 		}
@@ -163,7 +180,7 @@ func (ctrl *Controller) getAllUsers(s *APIserver) http.HandlerFunc {
 	}
 }
 
-func (ctrl *Controller) UpdateUser(s *APIserver) http.HandlerFunc {
+func (ctrl *Controller) UpdateUser(s *server) http.HandlerFunc {
 	type Request struct {
 		Email    string `json:"email"`
 		NewLogin string `json:"newLogin"`
@@ -194,7 +211,7 @@ func (ctrl *Controller) UpdateUser(s *APIserver) http.HandlerFunc {
 	}
 }
 
-func (ctrl *Controller) DeleteUser(s *APIserver) http.HandlerFunc {
+func (ctrl *Controller) DeleteUser(s *server) http.HandlerFunc {
 	type Request struct {
 		Email string `json:"email"`
 	}
@@ -220,5 +237,32 @@ func (ctrl *Controller) DeleteUser(s *APIserver) http.HandlerFunc {
 			"msg":    "user deleted",
 		})
 		s.Logger.Info("User deleted successfully")
+	}
+}
+
+func (ctrl *Controller) FindUser(s *server) http.HandlerFunc {
+	type Request struct {
+		Email string `json:"email"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req := Request{}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		u, err := s.storage.User().FindByEmail(req.Email)
+		if err != nil {
+			s.Logger.Warn("unhandle /findUser POST", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "appication/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"id":    strconv.Itoa(u.ID),
+			"email": u.Email,
+			"login": u.Login,
+		})
+		s.Logger.Info("handle /findUser POST")
+
 	}
 }

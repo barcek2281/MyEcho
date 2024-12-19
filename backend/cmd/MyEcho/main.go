@@ -2,9 +2,11 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"log"
+
 	"github.com/BurntSushi/toml"
 	"github.com/barcek2281/MyEcho/internal/app/apiserver"
-	"log"
 )
 
 var (
@@ -16,15 +18,16 @@ func init() {
 }
 func main() {
 	flag.Parse()
-	
+
 	config := apiserver.NewConfig()
 	_, err := toml.DecodeFile(configPath, config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	s := apiserver.NewAPIserver(config)
-	if err := s.Start(); err != nil {
+	fmt.Println("http://localhost" + config.BinAddr)
+
+	if err := apiserver.Start(config); err != nil {
 		log.Fatal(err)
 	}
 }
