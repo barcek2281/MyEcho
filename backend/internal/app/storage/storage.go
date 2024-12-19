@@ -2,8 +2,9 @@ package storage
 
 import (
 	"database/sql"
-	_ "github.com/lib/pq" // driver
 	"log"
+
+	_ "github.com/lib/pq" // driver
 )
 
 type Storage struct {
@@ -46,3 +47,4 @@ func (s *Storage) User() *UserRepository {
 	}
 	return s.userRepository
 }
+

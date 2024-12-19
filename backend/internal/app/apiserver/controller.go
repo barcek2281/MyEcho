@@ -11,14 +11,15 @@ import (
 	_ "github.com/sirupsen/logrus"
 )
 
-type Controller struct {
-}
+var controller Controller
+
+type Controller struct {}
 
 func NewController() *Controller {
 	return &Controller{}
 }
 
-func (ctrl *Controller) MainPage(s *APIserver) http.HandlerFunc {
+func (ctrl *Controller) MainPage(s *server) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		tmpl, err := template.ParseFiles("./templates/index.html")
@@ -37,7 +38,7 @@ func (ctrl *Controller) MainPage(s *APIserver) http.HandlerFunc {
 	}
 }
 
-func (ctrl *Controller) handleHello(s *APIserver) http.HandlerFunc {
+func (ctrl *Controller) handleHello(s *server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		response := map[string]string{
@@ -63,7 +64,7 @@ func (ctrl *Controller) handleHello(s *APIserver) http.HandlerFunc {
 	}
 }
 
-func (ctrl *Controller) handleHelloPost(s *APIserver) http.HandlerFunc {
+func (ctrl *Controller) handleHelloPost(s *server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := map[string]string{}
 		w.Header().Set("Content-Type", "application/json")
@@ -90,7 +91,7 @@ func (ctrl *Controller) handleHelloPost(s *APIserver) http.HandlerFunc {
 
 }
 
-func (ctrl *Controller) registerPage(s *APIserver) http.HandlerFunc {
+func (ctrl *Controller) registerPage(s *server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tmpl, err := template.ParseFiles("./templates/register.html")
 		if err != nil {
@@ -106,7 +107,7 @@ func (ctrl *Controller) registerPage(s *APIserver) http.HandlerFunc {
 	}
 }
 
-func (ctrl *Controller) registerUser(s *APIserver) http.HandlerFunc {
+func (ctrl *Controller) registerUser(s *server) http.HandlerFunc {
 	type Request struct {
 		Login    string `json:"login"`
 		Email    string `json:"email"`
@@ -115,7 +116,7 @@ func (ctrl *Controller) registerUser(s *APIserver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := Request{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			s.Error(w, r, http.StatusBadRequest, err)
 			s.Logger.Error(err)
 			return
 		}
@@ -134,15 +135,17 @@ func (ctrl *Controller) registerUser(s *APIserver) http.HandlerFunc {
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
+		
 		s.Logger.Info("handle /register POST")
 	}
 }
 
-func (ctrl *Controller) getAllUsers(s *APIserver) http.HandlerFunc {
+func (ctrl *Controller) getAllUsers(s *server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		all, err := s.storage.User().GetAll(20)
+		
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			s.Error(w, r, http.StatusNotFound, err)
 			s.Logger.Error(err)
 			return
 		}
@@ -162,7 +165,7 @@ func (ctrl *Controller) getAllUsers(s *APIserver) http.HandlerFunc {
 	}
 }
 
-func (ctrl *Controller) UpdateUser(s *APIserver) http.HandlerFunc {
+func (ctrl *Controller) UpdateUser(s *server) http.HandlerFunc {
 	type Request struct {
 		Email    string `json:"email"`
 		NewLogin string `json:"newLogin"`
@@ -193,7 +196,7 @@ func (ctrl *Controller) UpdateUser(s *APIserver) http.HandlerFunc {
 	}
 }
 
-func (ctrl *Controller) DeleteUser(s *APIserver) http.HandlerFunc {
+func (ctrl *Controller) DeleteUser(s *server) http.HandlerFunc {
 	type Request struct {
 		Email string `json:"email"`
 	}
@@ -222,7 +225,7 @@ func (ctrl *Controller) DeleteUser(s *APIserver) http.HandlerFunc {
 	}
 }
 
-func (ctrl *Controller) FindUser(s *APIserver) http.HandlerFunc {
+func (ctrl *Controller) FindUser(s *server) http.HandlerFunc {
 	type Request struct {
 		Email string `json:"email"`
 	}
