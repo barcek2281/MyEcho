@@ -84,6 +84,7 @@ import (
 	"net/http"
 
 	"github.com/barcek2281/MyEcho/internal/app/storage"
+	"github.com/gorilla/sessions"
 )
 
 func Start(config *Config) error {
@@ -91,6 +92,7 @@ func Start(config *Config) error {
 	if err := store.Open(); err != nil { // Ping db
 		return err
 	}
-	s := newServer(store)
+	session := sessions.NewCookieStore([]byte("cock"))
+	s := newServer(store, session)
 	return http.ListenAndServe(config.BinAddr, s)
 }

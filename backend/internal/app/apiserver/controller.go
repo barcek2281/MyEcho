@@ -11,6 +11,8 @@ import (
 	_ "github.com/sirupsen/logrus"
 )
 
+const sessionName = "MyEcho"
+
 var controller Controller
 
 type Controller struct {}
@@ -134,7 +136,20 @@ func (ctrl *Controller) registerUser(s *server) http.HandlerFunc {
 			s.Logger.Error(err)
 			return
 		}
-		w.WriteHeader(http.StatusCreated)
+
+		session, err := s.Session.Get(r, sessionName)
+		if err != nil {
+			s.Error(w, r, 404, err)
+			s.Logger.Error(err)
+			return
+		}
+
+		session.Values["user_id"] = u.ID
+		if err := s.Session.Save(r, w, session); err != nil {
+			s.Error(w, r, 404, err)
+			return
+		}
+		s.Respond(w, r, http.StatusCreated, map[string]string{"status": "Succesfully, created"})
 		
 		s.Logger.Info("handle /register POST")
 	}
