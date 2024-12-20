@@ -9,7 +9,11 @@
 </head>
 <body>
 <h1>Main Page</h1>
+{{- if .}}
+<p>hello, {{ .Login }}</p>
+{{ end }}
 <a href="/register">Register</a> 
 <a href="/users">Users</a>
+
 </body>
 </html>

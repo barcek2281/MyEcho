@@ -1,8 +1,14 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
+
 	"github.com/barcek2281/MyEcho/internal/app/model"
+)
+
+var (
+	errEmailIsUsed = errors.New("email: email is used")
 )
 
 // UserRepository
@@ -22,7 +28,7 @@ func (r *UserRepository) Create(u *model.User) error {
 	if err := r.storage.db.QueryRow("INSERT INTO users (email, login, password) VALUES ($1, $2, $3) RETURNING id",
 		u.Email, u.Login, u.Password,
 	).Scan(&u.ID); err != nil {
-		return err
+		return errEmailIsUsed
 	}
 
 	return nil
@@ -32,6 +38,15 @@ func (r *UserRepository) FindByEmail(email string) (*model.User, error) {
 	u := &model.User{}
 	if err := r.storage.db.QueryRow("SELECT id, email, login, password FROM users WHERE email = $1",
 		email).Scan(&u.ID, &u.Email, &u.Login, &u.Password); err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
+func (r* UserRepository) FindById(id int) (*model.User, error) {
+	u := &model.User{}
+	if err := r.storage.db.QueryRow("SELECT id, email, login, password FROM users WHERE id = $1", id).Scan(&u.ID,
+	&u.Email, &u.Login, &u.Password); err != nil {
 		return nil, err
 	}
 	return u, nil

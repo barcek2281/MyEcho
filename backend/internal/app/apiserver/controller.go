@@ -25,13 +25,30 @@ func (ctrl *Controller) MainPage(s *server) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		tmpl, err := template.ParseFiles("./templates/index.html")
-
 		if err != nil {
 			s.Logger.Error(err)
 			return
 		}
+		var data *model.User = nil
 		
-		err = tmpl.Execute(w, nil)
+		session, err := s.Session.Get(r, sessionName)
+		if err != nil {
+			s.Logger.Info("no session")
+		}
+
+		if session != nil {
+			userID, ok := session.Values["user_id"].(int)
+			if !ok {
+				s.Logger.Warn("session timeout!")
+			} else {
+				data, err = s.storage.User().FindById(userID)
+				if err != nil {
+					s.Logger.Warn("warn lol )")
+				}
+			}
+		}
+		
+		err = tmpl.Execute(w, data)
 		if err != nil {
 			s.Logger.Error(err)
 			return
@@ -130,6 +147,7 @@ func (ctrl *Controller) registerUser(s *server) http.HandlerFunc {
 			Password: req.Password,
 			Login:    req.Login,
 		}
+		
 
 		if err := s.storage.User().Create(&u); err != nil {
 			s.Error(w, r, http.StatusBadRequest, err)
