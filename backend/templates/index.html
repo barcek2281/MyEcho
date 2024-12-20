@@ -5,11 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyEcho | Main page</title>
-    <link rel="stylesheet" href="internal/app/templates/style.css">
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
 <h1>Main Page</h1>
-<a href="/register">Register</a>
+{{- if .}}
+<p>hello, {{ .Login }}</p>
+{{ end }}
+<a href="/register">Register</a> 
 <a href="/users">Users</a>
+
 </body>
 </html>

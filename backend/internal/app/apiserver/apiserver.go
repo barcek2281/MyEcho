@@ -92,7 +92,9 @@ func Start(config *Config) error {
 	if err := store.Open(); err != nil { // Ping db
 		return err
 	}
-	session := sessions.NewCookieStore([]byte("cock"))
+	session := sessions.NewCookieStore([]byte(config.CookieKey))
 	s := newServer(store, session)
+	//http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+	
 	return http.ListenAndServe(config.BinAddr, s)
 }

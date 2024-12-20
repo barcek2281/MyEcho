@@ -25,17 +25,36 @@ func (ctrl *Controller) MainPage(s *server) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		tmpl, err := template.ParseFiles("./templates/index.html")
+		if err != nil {
+			s.Logger.Error(err)
+			return
+		}
+		var data *model.User = nil
+		
+		session, err := s.Session.Get(r, sessionName)
+		if err != nil {
+			s.Logger.Info("no session")
+		}
 
+		if session != nil {
+			userID, ok := session.Values["user_id"].(int)
+			if !ok {
+				s.Logger.Warn("session timeout!")
+			} else {
+				data, err = s.storage.User().FindById(userID)
+				if err != nil {
+					s.Logger.Warn("warn lol )")
+				}
+			}
+		}
+		
+		err = tmpl.Execute(w, data)
 		if err != nil {
 			s.Logger.Error(err)
 			return
 		}
 
-		err = tmpl.Execute(w, nil)
-		if err != nil {
-			s.Logger.Error(err)
-			return
-		}
+		//w.Header().Set("c")
 		s.Logger.Info("handle MainPage GET")
 	}
 }
@@ -128,19 +147,18 @@ func (ctrl *Controller) registerUser(s *server) http.HandlerFunc {
 			Password: req.Password,
 			Login:    req.Login,
 		}
+		
 
 		if err := s.storage.User().Create(&u); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Header().Set("Content-Type", "application/json")
-			//json.NewEncoder(w).Encode(map[string]string{"err": string(err)})
-			s.Logger.Error(err)
+			s.Error(w, r, http.StatusBadRequest, err)
+			s.Logger.Warn(err)
 			return
 		}
 
 		session, err := s.Session.Get(r, sessionName)
 		if err != nil {
 			s.Error(w, r, 404, err)
-			s.Logger.Error(err)
+			s.Logger.Warn(err)
 			return
 		}
 
@@ -195,9 +213,7 @@ func (ctrl *Controller) UpdateUser(s *server) http.HandlerFunc {
 
 		err := s.storage.User().ChangeLoginByEmail(req.NewLogin, req.Email)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			s.Logger.Error(err)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			s.Error(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -218,16 +234,17 @@ func (ctrl *Controller) DeleteUser(s *server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := Request{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			s.Error(w, r, http.StatusBadRequest, err)
 			s.Logger.Error(err)
 			return
 		}
 
 		err := s.storage.User().DeleteByEmail(req.Email)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			s.Error(w, r, http.StatusBadRequest, err)
+			
 			s.Logger.Error(err)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			
 			return
 		}
 
@@ -252,8 +269,8 @@ func (ctrl *Controller) FindUser(s *server) http.HandlerFunc {
 		}
 		u, err := s.storage.User().FindByEmail(req.Email)
 		if err != nil {
+			s.Error(w, r, http.StatusBadRequest, err)
 			s.Logger.Warn("unhandle /findUser POST", err)
-			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		w.Header().Set("Content-Type", "appication/json")

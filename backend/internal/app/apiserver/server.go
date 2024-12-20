@@ -34,6 +34,7 @@ func newServer(store *storage.Storage, session sessions.Store) *server {
 
 func (s *server) ConfigureRouter() {
 	s.router.HandleFunc("/", controller.MainPage(s))
+
 	// мне бы ноормально называть функции, в будущем надо добавить под роутеры :(
 	s.router.HandleFunc("/hello", controller.handleHello(s)).Methods("GET")
 	s.router.HandleFunc("/hello", controller.handleHelloPost(s)).Methods("POST")
