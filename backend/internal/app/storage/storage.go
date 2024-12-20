@@ -11,11 +11,11 @@ type Storage struct {
 	DatabaseURL    string
 	db             *sql.DB
 	userRepository *UserRepository
+	postRepository *PostRepository
 }
 
 // New Config
 func New(databaseURL string) *Storage {
-
 	return &Storage{DatabaseURL: databaseURL}
 }
 
@@ -47,3 +47,11 @@ func (s *Storage) User() *UserRepository {
 	return s.userRepository
 }
 
+func (s *Storage) Post() *PostRepository {
+	if s.postRepository == nil {
+		s.postRepository = &PostRepository{
+			storage: s,
+		}
+	}
+	return s.postRepository
+}

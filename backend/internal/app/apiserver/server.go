@@ -43,10 +43,17 @@ func (s *server) ConfigureRouter() {
 	s.router.HandleFunc("/register", controller.registerUser(s)).Methods("POST")
 	s.router.HandleFunc("/register", controller.registerPage(s)).Methods("GET")
 
+	s.router.HandleFunc("/logout", controller.LogoutHandler(s))
+
 	s.router.HandleFunc("/users", controller.getAllUsers(s)).Methods("GET")
 	s.router.HandleFunc("/updateUserLogin", controller.UpdateUser(s)).Methods("POST")
 	s.router.HandleFunc("/deleteUser", controller.DeleteUser(s)).Methods("POST")
 	s.router.HandleFunc("/findUser", controller.FindUser(s)).Methods("POST")
+
+	// TODO: отдельно добавить ссылку для постов
+	s.router.HandleFunc("/createPost", controllerPost.CreatePost(s)).Methods("GET")
+	s.router.HandleFunc("/createPost", controllerPost.CreatePostReal(s)).Methods("POST")
+
 }
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

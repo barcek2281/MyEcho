@@ -29,32 +29,41 @@ func (ctrl *Controller) MainPage(s *server) http.HandlerFunc {
 			s.Logger.Error(err)
 			return
 		}
-		var data *model.User = nil
-		
+		var user *model.User = nil
+		var posts []*model.Post = nil
 		session, err := s.Session.Get(r, sessionName)
 		if err != nil {
 			s.Logger.Info("no session")
 		}
-
+		
 		if session != nil {
 			userID, ok := session.Values["user_id"].(int)
 			if !ok {
-				s.Logger.Warn("session timeout!")
-			} else {
-				data, err = s.storage.User().FindById(userID)
-				if err != nil {
-					s.Logger.Warn("warn lol )")
+				s.Logger.Warn("session timeout!", err)
+				} else {
+					user, err = s.storage.User().FindById(userID)
+					if err != nil {
+						s.Logger.Warn("warn lol )", err)
+					}
 				}
-			}
+		}
+		posts, err = s.storage.Post().GetAllWithAuthors(20)
+		if err != nil {
+			s.Error(w, r, 503, err)
+			return
 		}
 		
+		data := map[string]interface{}{
+			"user": user,
+			"posts": posts,
+		}
+
 		err = tmpl.Execute(w, data)
 		if err != nil {
 			s.Logger.Error(err)
 			return
 		}
 
-		//w.Header().Set("c")
 		s.Logger.Info("handle MainPage GET")
 	}
 }
@@ -167,11 +176,37 @@ func (ctrl *Controller) registerUser(s *server) http.HandlerFunc {
 			s.Error(w, r, 404, err)
 			return
 		}
-		s.Respond(w, r, http.StatusCreated, map[string]string{"status": "Succesfully, created"})
+		s.Respond(w, r, http.StatusCreated, map[string]string{"status": "Succesfully, created user"})
 		
 		s.Logger.Info("handle /register POST")
 	}
 }
+
+func (ctrl *Controller) LogoutHandler(s *server) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        // Получение сессии
+        session, err := s.Session.Get(r, sessionName)
+        if err != nil {
+            s.Logger.Warn("Failed to get session: ", err)
+            http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+            return
+        }
+
+        // Удаление данных из сессии
+        session.Options.MaxAge = -1 // Устанавливаем MaxAge в -1 для удаления куки
+        err = session.Save(r, w)
+        if err != nil {
+            s.Logger.Warn("Failed to delete session: ", err)
+            s.Error(w, r, http.StatusInternalServerError, err)
+            return
+        }
+
+        // Перенаправление на главную страницу или страницу входа
+        http.Redirect(w, r, "/", http.StatusSeeOther)
+		s.Logger.Info("handle /logout ANY")
+    }
+}
+
 
 func (ctrl *Controller) getAllUsers(s *server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
