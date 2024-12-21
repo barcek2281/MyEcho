@@ -14,7 +14,6 @@ import (
 
 const (
 	sessionName = "MyEcho"
-	pageNumberDefault = 5
 )
 
 var (
@@ -37,7 +36,8 @@ func (ctrl *Controller) MainPage(s *server) http.HandlerFunc {
 			return
 		}
 		var user *model.User = nil
-		var posts []*model.Post = nil
+		
+
 		session, err := s.Session.Get(r, sessionName)
 		if err != nil {
 			s.Logger.Info("no session")
@@ -54,23 +54,9 @@ func (ctrl *Controller) MainPage(s *server) http.HandlerFunc {
 				}
 			}
 		}
-		login := r.URL.Query().Get("author")
-		sortDate := r.URL.Query().Get("sort")
-		page, err := strconv.Atoi(r.URL.Query().Get("page"))
-		if err != nil {
-			s.Error(w, r, 403, err)
-			return 
-		}
-		posts, err = s.storage.Post().GetAllWithAuthors(login, sortDate, pageNumberDefault*page, 0)
-		if err != nil {
-			s.Error(w, r, 503, err)
-			return
-		}
-
 
 		data := map[string]interface{}{
 			"user":  user,
-			"posts": posts,
 		}
 
 		err = tmpl.Execute(w, data)

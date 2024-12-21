@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Main Page</title>
+    <style>
+      .post {
+        border-style: inset;
+        margin: 5px;
+      }
+    </style>
 </head>
 <body>
   <div class="container">
@@ -14,37 +20,37 @@
         <a href="/createPost">Create Post</a>
     </div>  
     {{ else }}
-      <a>register</a>|
-      <a>login</a>
+      <a href="/register">register </a>|
+      <a href="/login">login</a>
     {{ end }}
-
+    <br>
+    <a href="/users">users</a>
     <!-- Фильтрация и сортировка -->
     <div style="margin-top: 20px;">
-        <label for="author">Автор:</label>
-        <input type="text" id="author" placeholder="Введите автора">
-        <button onclick="applyFilters()">Фильтровать</button>
+        <label for="author">Author:</label>
+        <input type="text" id="author" placeholder="insert author">
+        <button onclick="applyFilters()">Filter</button>
     </div>
 
     <div>
-        <label for="sortDate">Сортировать по дате:</label>
+        <label for="sortDate">sort by date:</label>
         <select id="sortDate">
-            <option value="ASC">По возрастанию</option>
-            <option value="DESC">По убыванию</option>
+            <option value="DESC">desc</option>
+            <option value="ASC">asc</option>
         </select>
-        <button onclick="applyFilters()">Применить сортировку</button>
+        <button onclick="applyFilters()">Sort</button>
     </div>
 
 
 
     <div id="posts"></div>
     <div>
-      <button onclick="changePage(1)">More.</button>
-      
-  </div>
+      <button onclick="changePage()">More.</button>
+    </div>
     <script>
         let currentPage = 1;
         let currentAuthor = '';
-        let currentSort = 'ASC';
+        let currentSort = 'DESC';
 
         // Функция для отправки GET-запроса с параметрами
         function fetchPosts() {
@@ -53,16 +59,16 @@
               url = url + "author=" + currentAuthor
             }
 
-            if ((currentAuthor !== "" || currentPage !== "") && currentSort !== ""){
+            if ((currentAuthor !== "") && currentSort !== ""){
               url +="&"
             }
             if (currentSort !== ""){
               url = url + "sort=" + currentSort
             }
-            if ((currentAuthor !== "" || currentSort !== "") && currentPage !== ""){
+            if ((currentAuthor !== "" || currentSort !== "") && currentPage !== 0){
               url +="&"
             }
-            if (currentPage !== ""){
+            if (currentPage !== 0){
               url = url + "page=" +currentPage
             }
             // const url = `/getPost?author=${currentAuthor}&sortDate=${currentSort}&page=${currentPage}`;
@@ -77,25 +83,27 @@
         // Функция для отображения постов
         function displayPosts(posts) {
             const postsDiv = document.getElementById('posts');
-            
 
             posts.forEach(post => {
                 const postElement = document.createElement('div');
-                postElement.innerHTML = `<p>${post.content}</p><p>Автор: ${post.author}</p><p>Дата: ${post.created_at}</p>`;
+                postElement.innerHTML = `<div class="post"><p>${post.content}</p><p>Автор: ${post.author}</p><p>Дата: ${post.created_at}</p></div>`;
                 postsDiv.appendChild(postElement);
             });
         }
 
         // Применение фильтров и сортировки
         function applyFilters() {
+            const postsDiv = document.getElementById('posts');
+            postsDiv.innerHTML = '';
             currentAuthor = document.getElementById('author').value; // Получаем значение фильтра автора
             currentSort = document.getElementById('sortDate').value; // Получаем значение сортировки
+            currentPage = 1
             fetchPosts(); // Загружаем посты с новыми параметрами
         }
 
         // Функция для смены страницы пагинации
-        function changePage(page) {
-            currentPage = page;
+        function changePage() {
+            currentPage++;
             fetchPosts(); // Загружаем посты для новой страницы
         }
 

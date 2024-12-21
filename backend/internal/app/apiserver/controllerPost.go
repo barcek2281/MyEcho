@@ -4,13 +4,17 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"text/template"
 
 	"github.com/barcek2281/MyEcho/internal/app/model"
 )
 
-const SessionName = "MyEcho"
+const (
+	SessionName       = "MyEcho"
+	pageNumberDefault = 5
+)
 
 var (
 	controllerPost ControllerPost
@@ -102,19 +106,36 @@ func (ctrl *ControllerPost) CreatePostReal(s *server) http.HandlerFunc {
 }
 
 func (ctrl *ControllerPost) GetPost(s *server) http.HandlerFunc {
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Создаем ответ с кодом 201 и передаем JSON
-		s.Respond(w, r, 201, map[string]interface{}{
-			"posts": []map[string]string{
-				{
-					"content":    "wadwa",
-					"author":     "wadw",
-					"created_at": "wadwa",
-				},
-			},
-		})
 
-		s.Logger.Info("handle /getPage", r.URL)
+		login := r.URL.Query().Get("author")
+		sortDate := r.URL.Query().Get("sort")
+		if sortDate != "ASC" && sortDate != "DESC" {
+			sortDate = "DESC"
+		}
+		page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+		if page <= 0 {
+			page = 1
+		}
+
+		posts, err := s.storage.Post().GetAllWithAuthors(login, sortDate, pageNumberDefault, (page-1)*pageNumberDefault)
+		if err != nil {
+			s.Logger.Warn(err)
+			s.Error(w, r, 504, err)
+			return
+		}
+		res_posts := make([]map[string]string, 0)
+		for _, post := range posts {
+			res_posts = append(res_posts, map[string]string{
+				"content":    post.Content,
+				"author":     post.Author,
+				"created_at": post.ConverDateToString(),
+			})
+		}
+		s.Respond(w, r, 201, map[string]interface{}{"posts": res_posts})
+		s.Logger.Info("handle /getPost ", r.URL)
 	}
 
 }

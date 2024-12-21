@@ -51,14 +51,13 @@ func (p *PostRepository) GetAllWithAuthors(login, sortDate string, limit, offset
 	}
 
 	query += " ORDER BY posts.created_at "
-	if sortDate == "DESC" {
+	if sortDate != "" {
 		query += sortDate
-	} else if sortDate == "ASC" {
-		query += sortDate
-	} else {
+	}else {
 		query += "DESC"
 	}
-	rows, err := p.storage.db.Query(query + " LIMIT $1", limit)
+
+	rows, err := p.storage.db.Query(query + " LIMIT $1 OFFSET $2", limit, offset)
 	
 	if err != nil {
 		return nil, err
