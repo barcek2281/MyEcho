@@ -50,6 +50,7 @@ func (p *PostRepository) GetAllWithAuthors(login, sortDate string, limit, offset
 		query += "WHERE users.login = " + "'" + login + "'" 
 	}
 
+	// сортировка по времени
 	query += " ORDER BY posts.created_at "
 	if sortDate != "" {
 		query += sortDate

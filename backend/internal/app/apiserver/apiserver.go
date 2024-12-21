@@ -94,7 +94,5 @@ func Start(config *Config) error {
 	}
 	session := sessions.NewCookieStore([]byte(config.CookieKey))
 	s := newServer(store, session)
-	//http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
-	
 	return http.ListenAndServe(config.BinAddr, s)
 }

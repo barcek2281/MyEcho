@@ -12,8 +12,7 @@ type Post struct {
 	Content string `json:"content"`
 	Author  string `json:"author"` // такой колонки нету в модели
 
-	Created_at    sql.NullTime
-	
+	Created_at    sql.NullTime	
 }
 
 func (p *Post) Validate() error {

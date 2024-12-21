@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"text/template"
 
 	"github.com/barcek2281/MyEcho/internal/app/model"
@@ -36,8 +35,7 @@ func (ctrl *Controller) MainPage(s *server) http.HandlerFunc {
 			return
 		}
 		var user *model.User = nil
-		
-
+	
 		session, err := s.Session.Get(r, sessionName)
 		if err != nil {
 			s.Logger.Info("no session")
@@ -117,9 +115,7 @@ func (ctrl *Controller) handleHelloPost(s *server) http.HandlerFunc {
 		json.NewEncoder(w).Encode(map[string]string{"status": "ok", "msg": "we got the message"})
 
 		s.Logger.Info("handle /hello POST")
-
 	}
-
 }
 
 func (ctrl *Controller) registerPage(s *server) http.HandlerFunc {
@@ -256,113 +252,3 @@ func (ctrl *Controller) LogoutHandler(s *server) http.HandlerFunc {
 	}
 }
 
-func (ctrl *Controller) getAllUsers(s *server) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		all, err := s.storage.User().GetAll(20)
-
-		if err != nil {
-			s.Error(w, r, http.StatusNotFound, err)
-			s.Logger.Error(err)
-			return
-		}
-		w.Header().Set("Content-Type", "http")
-		tmpl, err := template.ParseFiles("./templates/users.html")
-		if err != nil {
-			s.Logger.Error(err)
-			return
-		}
-		err = tmpl.Execute(w, all)
-		if err != nil {
-			s.Logger.Error(err)
-			return
-		}
-		s.Logger.Info("handle /getAllUsers GET")
-
-	}
-}
-
-func (ctrl *Controller) UpdateUser(s *server) http.HandlerFunc {
-	type Request struct {
-		Email    string `json:"email"`
-		NewLogin string `json:"newLogin"`
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		req := Request{}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			s.Logger.Error(err)
-			return
-		}
-
-		err := s.storage.User().ChangeLoginByEmail(req.NewLogin, req.Email)
-		if err != nil {
-			s.Error(w, r, http.StatusInternalServerError, err)
-			return
-		}
-
-		// Возвращаем новый логин, чтобы обновить таблицу на клиенте
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{
-			"email":    req.Email,
-			"newLogin": req.NewLogin,
-		})
-		s.Logger.Info("User login updated successfully")
-	}
-}
-
-func (ctrl *Controller) DeleteUser(s *server) http.HandlerFunc {
-	type Request struct {
-		Email string `json:"email"`
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		req := Request{}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			s.Error(w, r, http.StatusBadRequest, err)
-			s.Logger.Error(err)
-			return
-		}
-
-		err := s.storage.User().DeleteByEmail(req.Email)
-		if err != nil {
-			s.Error(w, r, http.StatusBadRequest, err)
-
-			s.Logger.Error(err)
-
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{
-			"status": "OK",
-			"msg":    "user deleted",
-		})
-		s.Logger.Info("User deleted successfully")
-	}
-}
-
-func (ctrl *Controller) FindUser(s *server) http.HandlerFunc {
-	type Request struct {
-		Email string `json:"email"`
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		req := Request{}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		u, err := s.storage.User().FindByEmail(req.Email)
-		if err != nil {
-			s.Error(w, r, http.StatusBadRequest, err)
-			s.Logger.Warn("unhandle /findUser POST", err)
-			return
-		}
-		w.Header().Set("Content-Type", "appication/json")
-		json.NewEncoder(w).Encode(map[string]string{
-			"id":    strconv.Itoa(u.ID),
-			"email": u.Email,
-			"login": u.Login,
-		})
-		s.Logger.Info("handle /findUser POST")
-
-	}
-}
