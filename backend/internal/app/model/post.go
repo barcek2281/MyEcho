@@ -1,14 +1,18 @@
 package model
 
-import validation "github.com/go-ozzo/ozzo-validation"
+import (
+	"database/sql"
+
+	validation "github.com/go-ozzo/ozzo-validation"
+)
 
 type Post struct {
-	Id int
+	Id      int
 	User_id int
-	Content string 
-	Author string
+	Content string
+	Author  string
+	Created_at    sql.NullTime
 }
-
 
 func (p *Post) Validate() error {
 	return validation.ValidateStruct(p,

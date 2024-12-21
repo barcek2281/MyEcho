@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+
 	"text/template"
 
 	"github.com/barcek2281/MyEcho/internal/app/model"
@@ -56,13 +57,12 @@ func (ctrl *ControllerPost) CreatePost(s *server) http.HandlerFunc {
 			s.Error(w, r, 404, errSessionTimeOut)
 		}
 
-
 		s.Logger.Info("Handle /createPost GET")
 	}
 }
 
 func (ctrl *ControllerPost) CreatePostReal(s *server) http.HandlerFunc {
-	type Request struct{
+	type Request struct {
 		Content string `json:"content"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -80,7 +80,7 @@ func (ctrl *ControllerPost) CreatePostReal(s *server) http.HandlerFunc {
 			return
 		}
 		req := Request{}
-		if err = json.NewDecoder(r.Body).Decode(&req); err != nil{
+		if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 			s.Error(w, r, 404, err)
 			s.Logger.Warn(err)
 			return
@@ -99,4 +99,22 @@ func (ctrl *ControllerPost) CreatePostReal(s *server) http.HandlerFunc {
 		s.Respond(w, r, http.StatusCreated, map[string]string{"status": "Succesfully, created post"})
 		s.Logger.Info("handle /createPost POST")
 	}
+}
+
+func (ctrl *ControllerPost) GetPost(s *server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Создаем ответ с кодом 201 и передаем JSON
+		s.Respond(w, r, 201, map[string]interface{}{
+			"posts": []map[string]string{
+				{
+					"content":    "wadwa",
+					"author":     "wadw",
+					"created_at": "wadwa",
+				},
+			},
+		})
+
+		s.Logger.Info("handle /getPage", r.URL)
+	}
+
 }

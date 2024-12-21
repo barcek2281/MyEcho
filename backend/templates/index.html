@@ -1,95 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Main Page | MyEcho</title>
-  <link href="/static/css/style.css" rel="stylesheet">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f9;
-      color: #333;
-      margin: 0;
-      padding: 0;
-    }
-    .container {
-      max-width: 800px;
-      margin: 50px auto;
-      padding: 20px;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-    h1, h5 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #4CAF50;
-    }
-    .nav {
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-    .nav a {
-      color: #4CAF50;
-      text-decoration: none;
-      font-size: 16px;
-    }
-    .nav a:hover {
-      text-decoration: underline;
-    }
-    .post {
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
-      background-color: #f9f9f9;
-    }
-    .post h2 {
-      margin: 0 0 10px;
-      font-size: 20px;
-      color: #333;
-    }
-    .post p {
-      margin: 0;
-      font-size: 14px;
-      color: #555;
-    }
-    .post .author {
-      font-size: 12px;
-      color: #888;
-      margin-top: 5px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Main Page</title>
 </head>
 <body>
   <div class="container">
-    <h1>Main Page</h1>
+    <h1><a href="/">Main Page</a></h1>
     {{ if .user }}
-        <h5>hello, {{ .user.Login }}</h5>
-        <a href="/logout">logout</a>
-    {{ end }}
+    <h5>hello, {{ .user.Login }}</h5>
     <div class="nav">
-      <a href="/register">Register</a> |
-      <a href="/login">Login</a>
-      <a href="/users">Users</a>
-      <a href="/createPost">Create Post</a>
-      
+        <a href="/logout">logout</a>
+        <a href="/createPost">Create Post</a>
+    </div>  
+    {{ else }}
+      <a>register</a>|
+      <a>login</a>
+    {{ end }}
+
+    <!-- Фильтрация и сортировка -->
+    <div style="margin-top: 20px;">
+        <label for="author">Автор:</label>
+        <input type="text" id="author" placeholder="Введите автора">
+        <button onclick="applyFilters()">Фильтровать</button>
     </div>
 
-    <h2>User Posts</h2>
-    <div id="posts">
-      {{ range .posts }}
-        <div class="post">
-          <p>{{ .Content }}</p>
-          <p class="author">Author: <a href="/profile?={{ .Author }}">{{ .Author }}</a></p>
-        </div>
-      {{ else }}
-        <p>No posts available.</p>
-      {{ end }}
+    <div>
+        <label for="sortDate">Сортировать по дате:</label>
+        <select id="sortDate">
+            <option value="ASC">По возрастанию</option>
+            <option value="DESC">По убыванию</option>
+        </select>
+        <button onclick="applyFilters()">Применить сортировку</button>
     </div>
+
+
+
+    <div id="posts"></div>
+    <div>
+      <button onclick="changePage(1)">More.</button>
+      
   </div>
+    <script>
+        let currentPage = 1;
+        let currentAuthor = '';
+        let currentSort = 'ASC';
+
+        // Функция для отправки GET-запроса с параметрами
+        function fetchPosts() {
+            var url = `/getPost?`
+            if (currentAuthor !== '') {
+              url = url + "author=" + currentAuthor
+            }
+
+            if ((currentAuthor !== "" || currentPage !== "") && currentSort !== ""){
+              url +="&"
+            }
+            if (currentSort !== ""){
+              url = url + "sort=" + currentSort
+            }
+            if ((currentAuthor !== "" || currentSort !== "") && currentPage !== ""){
+              url +="&"
+            }
+            if (currentPage !== ""){
+              url = url + "page=" +currentPage
+            }
+            // const url = `/getPost?author=${currentAuthor}&sortDate=${currentSort}&page=${currentPage}`;
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    displayPosts(data.posts); // Отображение полученных постов
+                })
+                .catch(error => console.error('Error fetching posts:', error));
+        }
+
+        // Функция для отображения постов
+        function displayPosts(posts) {
+            const postsDiv = document.getElementById('posts');
+            
+
+            posts.forEach(post => {
+                const postElement = document.createElement('div');
+                postElement.innerHTML = `<p>${post.content}</p><p>Автор: ${post.author}</p><p>Дата: ${post.created_at}</p>`;
+                postsDiv.appendChild(postElement);
+            });
+        }
+
+        // Применение фильтров и сортировки
+        function applyFilters() {
+            currentAuthor = document.getElementById('author').value; // Получаем значение фильтра автора
+            currentSort = document.getElementById('sortDate').value; // Получаем значение сортировки
+            fetchPosts(); // Загружаем посты с новыми параметрами
+        }
+
+        // Функция для смены страницы пагинации
+        function changePage(page) {
+            currentPage = page;
+            fetchPosts(); // Загружаем посты для новой страницы
+        }
+
+        // Инициализация страницы с начальными параметрами
+        fetchPosts();
+    </script>
 </body>
 </html>

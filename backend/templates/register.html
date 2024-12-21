@@ -39,8 +39,7 @@
       });
       
       if (response.ok) {
-        alert('Registered successfully!');
-        err.innerText = ""
+        location.replace("/")
       }
       else {
         const data = await response.json()
