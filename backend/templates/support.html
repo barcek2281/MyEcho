@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>support | MyEcho</title>
+</head>
+<body>
+    <h1>Support & Help</h1>
+    <form id="support">
+        <label for=""> choose problem or issue type: </label>
+        <select id="problemType">
+            <option value="i forget my password">i forget my password</option>
+            <option value="technical issue">technical issue</option>
+            <option value="other">other</option>
+        </select>
+        <br><br>
+        <textarea id="problemText" placeholder="write your problem" rows="10" cols="100" required></textarea>
+        <br>
+        <p style="color:gray">*if you sending email without authentication, your email will be anonymous</p>
+        <button type="submit" style="margin-top:10px">submit</button>
+    </form>
+    <script>
+        document.getElementById("support").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const problemText = document.getElementById("problemText").value;
+            const problemType = document.getElementById("problemType").value;
+
+            const response = await fetch('/support', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: problemType,
+                    text: problemText,
+                })
+            });
+
+            if (response.ok) {
+                console.log("OK");
+            }else {
+                console.log("not OK");
+            }
+        });
+    </script>
+    <p>back to <a href="/">Main page</a></p>
+</body>
+</html>

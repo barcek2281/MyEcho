@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/smtp"
+
 	"text/template"
 
 	"github.com/barcek2281/MyEcho/internal/app/model"
@@ -35,7 +37,7 @@ func (ctrl *Controller) MainPage(s *server) http.HandlerFunc {
 			return
 		}
 		var user *model.User = nil
-	
+
 		session, err := s.Session.Get(r, sessionName)
 		if err != nil {
 			s.Logger.Info("no session")
@@ -54,7 +56,7 @@ func (ctrl *Controller) MainPage(s *server) http.HandlerFunc {
 		}
 
 		data := map[string]interface{}{
-			"user":  user,
+			"user": user,
 		}
 
 		err = tmpl.Execute(w, data)
@@ -252,3 +254,66 @@ func (ctrl *Controller) LogoutHandler(s *server) http.HandlerFunc {
 	}
 }
 
+func (ctrl *Controller) SupportPage(s *server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		tmpl, err := template.ParseFiles("./templates/support.html")
+		if err != nil {
+			s.Logger.Error(err)
+			return
+		}
+
+		tmpl.Execute(w, nil)
+		s.Logger.Info("handle support/ GET")
+	}
+}
+
+func (ctrl *Controller) SupportUser(s *server) http.HandlerFunc {
+	type Request struct {
+		TypeProblem string `json:"type"`
+		Text        string `json:"text"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req := Request{}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			s.Logger.Error(err)
+			s.Error(w, r, http.StatusBadRequest, err)
+			return
+		}
+		email := ""
+
+		session, err := s.Session.Get(r, sessionName)
+		if err == nil {
+			id, ok := session.Values["user_id"].(int)
+			if ok {
+				u, err := s.storage.User().FindById(id)
+				if err == nil {
+					email = u.Email
+				}
+			}
+		}
+
+		auth := smtp.PlainAuth("hitler", s.Env.EmailTo, s.Env.EmailToPassword, "smtp.gmail.com")
+
+		to := []string{s.Env.EmailTo}
+
+		msg := "Subject: " + req.TypeProblem +
+			"\r\n\n" +
+			req.Text + "\r\n"
+
+		if email != "" {
+			msg += "email: " + email
+		} else {
+			msg += "email: anonymous"
+		}
+
+		err = smtp.SendMail("smtp.gmail.com:587", auth, "", to, []byte(msg))
+		if err != nil {
+			s.Logger.Warn(err)
+			s.Error(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		s.Respond(w, r, http.StatusAccepted, nil)
+		s.Logger.Info("handle support/ POST")
+	}
+}

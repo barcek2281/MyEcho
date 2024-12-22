@@ -24,10 +24,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	
+	env := apiserver.NewEnv()
+	_, err = toml.DecodeFile(configPath, env)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	fmt.Println("http://localhost" + config.BinAddr)
 
-	if err := apiserver.Start(config); err != nil {
+	if err := apiserver.Start(config, env); err != nil {
 		log.Fatal(err)
 	}
 }

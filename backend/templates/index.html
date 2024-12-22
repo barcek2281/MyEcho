@@ -13,7 +13,7 @@
 </head>
 <body>
   <div class="container">
-    <h1><a href="/">Main Page</a></h1>
+    <h1><a href="/">MyEcho</a></h1>
     {{ if .user }}
     <h5>hello, {{ .user.Login }}</h5>
     <div class="nav">
@@ -26,6 +26,7 @@
     {{ end }}
     <br>
     <a href="/users">users</a>
+    <a href="/support">support</a>
     <!-- Фильтрация и сортировка -->
     <div style="margin-top: 20px;">
         <label for="author">Author:</label>
