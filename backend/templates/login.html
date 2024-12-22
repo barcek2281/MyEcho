@@ -8,6 +8,42 @@
 </head>
 <body>
 <h1>Login</h1>
+<form id="loginForm">
+  <input type="email" id="email" placeholder="Email" required />
+  <input type="password" id="password" placeholder="Password" required />
+  <button type="submit">Login</button>
+  <p id="error"></p>
+  <p id="success"></p>
+</form>
+<p>back to <a href="/">Main Page</a></p>
+<script>
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-<body>
+
+      const password = document.getElementById('password').value;
+      const email = document.getElementById('email').value;
+
+      const err = document.getElementById("error")
+      const success = document.getElementById("success")
+
+      const response = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email, 
+          password: password
+         })
+      });
+      
+
+      if (!response.ok){
+        const data = await response.json()
+        err.innerText = data["error"]
+      } else {
+          location.replace("/")
+      }
+  });
+</script>
+</body>
 </html>     

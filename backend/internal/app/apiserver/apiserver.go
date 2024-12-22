@@ -87,14 +87,13 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-func Start(config *Config) error {
+func Start(config *Config, env *Env) error {
 	store := storage.New(config.DataBaseURL)
 	if err := store.Open(); err != nil { // Ping db
 		return err
 	}
 	session := sessions.NewCookieStore([]byte(config.CookieKey))
-	s := newServer(store, session)
-	//http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 	
+	s := newServer(store, session, env)
 	return http.ListenAndServe(config.BinAddr, s)
 }

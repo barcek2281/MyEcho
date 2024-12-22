@@ -2,20 +2,27 @@ package apiserver
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
+	"net/smtp"
+
 	"text/template"
 
 	"github.com/barcek2281/MyEcho/internal/app/model"
 	_ "github.com/sirupsen/logrus"
 )
 
-const sessionName = "MyEcho"
+const (
+	sessionName = "MyEcho"
+)
 
-var controller Controller
+var (
+	controller                  Controller
+	errIncorrectPasswordOrEmail = errors.New("incorrect password or email")
+)
 
-type Controller struct {}
+type Controller struct{}
 
 func NewController() *Controller {
 	return &Controller{}
@@ -29,8 +36,8 @@ func (ctrl *Controller) MainPage(s *server) http.HandlerFunc {
 			s.Logger.Error(err)
 			return
 		}
-		var data *model.User = nil
-		
+		var user *model.User = nil
+
 		session, err := s.Session.Get(r, sessionName)
 		if err != nil {
 			s.Logger.Info("no session")
@@ -39,22 +46,25 @@ func (ctrl *Controller) MainPage(s *server) http.HandlerFunc {
 		if session != nil {
 			userID, ok := session.Values["user_id"].(int)
 			if !ok {
-				s.Logger.Warn("session timeout!")
+				s.Logger.Warn("session timeout!", err)
 			} else {
-				data, err = s.storage.User().FindById(userID)
+				user, err = s.storage.User().FindById(userID)
 				if err != nil {
-					s.Logger.Warn("warn lol )")
+					s.Logger.Warn("warn lol )", err)
 				}
 			}
 		}
-		
+
+		data := map[string]interface{}{
+			"user": user,
+		}
+
 		err = tmpl.Execute(w, data)
 		if err != nil {
 			s.Logger.Error(err)
 			return
 		}
 
-		//w.Header().Set("c")
 		s.Logger.Info("handle MainPage GET")
 	}
 }
@@ -107,9 +117,7 @@ func (ctrl *Controller) handleHelloPost(s *server) http.HandlerFunc {
 		json.NewEncoder(w).Encode(map[string]string{"status": "ok", "msg": "we got the message"})
 
 		s.Logger.Info("handle /hello POST")
-
 	}
-
 }
 
 func (ctrl *Controller) registerPage(s *server) http.HandlerFunc {
@@ -147,7 +155,6 @@ func (ctrl *Controller) registerUser(s *server) http.HandlerFunc {
 			Password: req.Password,
 			Login:    req.Login,
 		}
-		
 
 		if err := s.storage.User().Create(&u); err != nil {
 			s.Error(w, r, http.StatusBadRequest, err)
@@ -167,119 +174,146 @@ func (ctrl *Controller) registerUser(s *server) http.HandlerFunc {
 			s.Error(w, r, 404, err)
 			return
 		}
-		s.Respond(w, r, http.StatusCreated, map[string]string{"status": "Succesfully, created"})
-		
+		s.Respond(w, r, http.StatusCreated, map[string]string{"status": "Succesfully, created user"})
+
 		s.Logger.Info("handle /register POST")
 	}
 }
 
-func (ctrl *Controller) getAllUsers(s *server) http.HandlerFunc {
+func (ctrl *Controller) loginPage(s *server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		all, err := s.storage.User().GetAll(20)
-		
+		tmpl, err := template.ParseFiles("./templates/login.html")
 		if err != nil {
-			s.Error(w, r, http.StatusNotFound, err)
-			s.Logger.Error(err)
-			return
-		}
-		w.Header().Set("Content-Type", "http")
-		tmpl, err := template.ParseFiles("./templates/users.html")
-		if err != nil {
-			s.Logger.Error(err)
-			return
-		}
-		err = tmpl.Execute(w, all)
-		if err != nil {
-			s.Logger.Error(err)
-			return
-		}
-		s.Logger.Info("handle /getAllUsers GET")
-
-	}
-}
-
-func (ctrl *Controller) UpdateUser(s *server) http.HandlerFunc {
-	type Request struct {
-		Email    string `json:"email"`
-		NewLogin string `json:"newLogin"`
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		req := Request{}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			s.Logger.Error(err)
-			return
-		}
-
-		err := s.storage.User().ChangeLoginByEmail(req.NewLogin, req.Email)
-		if err != nil {
+			s.Logger.Warn(err)
 			s.Error(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
-		// Возвращаем новый логин, чтобы обновить таблицу на клиенте
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{
-			"email":    req.Email,
-			"newLogin": req.NewLogin,
-		})
-		s.Logger.Info("User login updated successfully")
-	}
-}
-
-func (ctrl *Controller) DeleteUser(s *server) http.HandlerFunc {
-	type Request struct {
-		Email string `json:"email"`
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		req := Request{}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			s.Error(w, r, http.StatusBadRequest, err)
-			s.Logger.Error(err)
-			return
-		}
-
-		err := s.storage.User().DeleteByEmail(req.Email)
+		err = tmpl.Execute(w, nil)
 		if err != nil {
-			s.Error(w, r, http.StatusBadRequest, err)
-			
 			s.Logger.Error(err)
-			
 			return
 		}
-
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{
-			"status": "OK",
-			"msg":    "user deleted",
-		})
-		s.Logger.Info("User deleted successfully")
+		s.Logger.Info("Handle /login GET")
 	}
 }
 
-func (ctrl *Controller) FindUser(s *server) http.HandlerFunc {
+func (ctrl *Controller) loginUser(s *server) http.HandlerFunc {
 	type Request struct {
-		Email string `json:"email"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := Request{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			s.Logger.Warn(err)
+			s.Error(w, r, 404, err)
 			return
 		}
+
 		u, err := s.storage.User().FindByEmail(req.Email)
-		if err != nil {
-			s.Error(w, r, http.StatusBadRequest, err)
-			s.Logger.Warn("unhandle /findUser POST", err)
+		if err != nil || !u.ComparePassword(req.Password) {
+			s.Error(w, r, 404, errIncorrectPasswordOrEmail)
 			return
 		}
-		w.Header().Set("Content-Type", "appication/json")
-		json.NewEncoder(w).Encode(map[string]string{
-			"id":    strconv.Itoa(u.ID),
-			"email": u.Email,
-			"login": u.Login,
-		})
-		s.Logger.Info("handle /findUser POST")
+		session, err := s.Session.Get(r, sessionName)
+		if err != nil {
+			s.Error(w, r, 404, err)
+			return
+		}
+		session.Values["user_id"] = u.ID
+		s.Session.Save(r, w, session)
 
+		s.Logger.Info("handle /login POST")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+}
+
+func (ctrl *Controller) LogoutHandler(s *server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Получение сессии
+		session, err := s.Session.Get(r, sessionName)
+		if err != nil {
+			s.Logger.Warn("Failed to get session: ", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		// Удаление данных из сессии
+		session.Options.MaxAge = -1 // Устанавливаем MaxAge в -1 для удаления куки
+		err = session.Save(r, w)
+		if err != nil {
+			s.Logger.Warn("Failed to delete session: ", err)
+			s.Error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		// Перенаправление на главную страницу или страницу входа
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		s.Logger.Info("handle /logout ANY")
+	}
+}
+
+func (ctrl *Controller) SupportPage(s *server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		tmpl, err := template.ParseFiles("./templates/support.html")
+		if err != nil {
+			s.Logger.Error(err)
+			return
+		}
+
+		tmpl.Execute(w, nil)
+		s.Logger.Info("handle support/ GET")
+	}
+}
+
+func (ctrl *Controller) SupportUser(s *server) http.HandlerFunc {
+	type Request struct {
+		TypeProblem string `json:"type"`
+		Text        string `json:"text"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req := Request{}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			s.Logger.Error(err)
+			s.Error(w, r, http.StatusBadRequest, err)
+			return
+		}
+		email := ""
+
+		session, err := s.Session.Get(r, sessionName)
+		if err == nil {
+			id, ok := session.Values["user_id"].(int)
+			if ok {
+				u, err := s.storage.User().FindById(id)
+				if err == nil {
+					email = u.Email
+				}
+			}
+		}
+
+		auth := smtp.PlainAuth("hitler", s.Env.EmailTo, s.Env.EmailToPassword, "smtp.gmail.com")
+
+		to := []string{s.Env.EmailTo}
+
+		msg := "Subject: " + req.TypeProblem +
+			"\r\n\n" +
+			req.Text + "\r\n"
+
+		if email != "" {
+			msg += "email: " + email
+		} else {
+			msg += "email: anonymous"
+		}
+
+		err = smtp.SendMail("smtp.gmail.com:587", auth, "", to, []byte(msg))
+		if err != nil {
+			s.Logger.Warn(err)
+			s.Error(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		s.Respond(w, r, http.StatusAccepted, nil)
+		s.Logger.Info("handle support/ POST")
 	}
 }

@@ -3,10 +3,10 @@ package apiserver
 //import "github.com/barcek2281/MyEcho/internal/app/storage"
 
 type Config struct {
-	BinAddr     string `toml:"bin_addr"`
-	LogLevel    string `toml:"log_level"`
-	DataBaseURL string `toml:"database_url"`
-	CookieKey   string `toml:"cookie_key"`
+	BinAddr         string `toml:"bin_addr"`
+	LogLevel        string `toml:"log_level"`
+	DataBaseURL     string `toml:"database_url"`
+	CookieKey       string `toml:"cookie_key"`
 }
 
 func NewConfig() *Config {
