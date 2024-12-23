@@ -134,7 +134,7 @@ func (ctrl *ControllerPost) GetPost(s *server) http.HandlerFunc {
 				"created_at": post.ConverDateToString(),
 			})
 		}
-		s.Respond(w, r, 201, map[string]interface{}{"posts": res_posts})
+		s.Respond(w, r, http.StatusAccepted, map[string]interface{}{"posts": res_posts})
 		s.Logger.Info("handle /getPost ", r.URL)
 	}
 

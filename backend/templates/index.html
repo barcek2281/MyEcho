@@ -47,6 +47,7 @@
 
     <div id="posts"></div>
     <div>
+      <p id="secret_p"></p>
       <button onclick="changePage()">More.</button>
     </div>
     <script>
@@ -85,27 +86,32 @@
         // Функция для отображения постов
         function displayPosts(posts) {
             const postsDiv = document.getElementById('posts');
-
+            if (posts.length <= 0) {
+              console.log("no page (")
+              document.getElementById("secret_p").textContent = "no page :("
+              return
+            }
             posts.forEach(post => {
                 const postElement = document.createElement('div');
-                postElement.innerHTML = `<div class="post"><p>${post.content}</p><p>Автор: ${post.author}</p><p>Дата: ${post.created_at}</p></div>`;
+                postElement.innerHTML = `<div class="post"><p>${post.content}</p><p>Author: ${post.author}</p><p>Date: ${post.created_at}</p></div>`;
                 postsDiv.appendChild(postElement);
             });
+            currentPage++;
         }
 
         // Применение фильтров и сортировки
         function applyFilters() {
             const postsDiv = document.getElementById('posts');
-            postsDiv.innerHTML = '';
+          
             currentAuthor = document.getElementById('author').value; // Получаем значение фильтра автора
             currentSort = document.getElementById('sortDate').value; // Получаем значение сортировки
-            currentPage = 1
+            postsDiv.innerHTML = ''; // clear previuos posts
+            currentPage = 1 // reload page
             fetchPosts(); // Загружаем посты с новыми параметрами
         }
 
         // Функция для смены страницы пагинации
         function changePage() {
-            currentPage++;
             fetchPosts(); // Загружаем посты для новой страницы
         }
 
