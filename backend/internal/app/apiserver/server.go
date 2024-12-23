@@ -34,6 +34,8 @@ func newServer(store *storage.Storage, session sessions.Store, env *Env) *server
 }
 
 func (s *server) ConfigureRouter() {
+	fs := http.FileServer(http.Dir("./static"))
+	s.router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
 
 	s.router.HandleFunc("/", controller.MainPage(s))
 	s.router.HandleFunc("/support", controller.SupportPage(s)).Methods("GET")
