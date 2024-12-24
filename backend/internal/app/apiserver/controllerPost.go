@@ -25,7 +25,7 @@ var (
 	errSessionTimeOut = errors.New("your session time out")
 	errTooManyRequest = errors.New("Too many request dude")
 
-	limiter           = rate.NewLimiter(1, 3)
+	limiter = rate.NewLimiter(1, 3)
 )
 
 type ControllerPost struct{}
@@ -77,7 +77,7 @@ func (ctrl *ControllerPost) CreatePostReal(s *server) http.HandlerFunc {
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		// limit (1, 3)
-		if !limiter.Allow(){
+		if !limiter.Allow() {
 			s.Error(w, r, http.StatusTooManyRequests, errTooManyRequest)
 			return
 		}
@@ -121,7 +121,6 @@ func (ctrl *ControllerPost) GetPost(s *server) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Создаем ответ с кодом 201 и передаем JSON
-
 		login := r.URL.Query().Get("author")
 		sortDate := r.URL.Query().Get("sort")
 		if sortDate != "ASC" && sortDate != "DESC" {
@@ -146,7 +145,9 @@ func (ctrl *ControllerPost) GetPost(s *server) http.HandlerFunc {
 				"created_at": post.ConverDateToString(),
 			})
 		}
-		s.Respond(w, r, http.StatusAccepted, map[string]interface{}{"posts": res_posts})
+		s.Respond(w, r, http.StatusAccepted, map[string]interface{}{
+			"posts": res_posts,
+		})
 		s.Logger.Info("handle /getPost ", r.URL)
 	}
 
