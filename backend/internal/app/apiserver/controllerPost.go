@@ -8,6 +8,8 @@ import (
 
 	"text/template"
 
+	"golang.org/x/time/rate"
+
 	"github.com/barcek2281/MyEcho/internal/app/model"
 )
 
@@ -21,6 +23,9 @@ var (
 
 	errCantBeHere     = errors.New("you not suppose to be here")
 	errSessionTimeOut = errors.New("your session time out")
+	errTooManyRequest = errors.New("Too many request dude")
+
+	limiter = rate.NewLimiter(1, 3)
 )
 
 type ControllerPost struct{}
@@ -65,11 +70,18 @@ func (ctrl *ControllerPost) CreatePost(s *server) http.HandlerFunc {
 	}
 }
 
+// POST createPost/
 func (ctrl *ControllerPost) CreatePostReal(s *server) http.HandlerFunc {
 	type Request struct {
 		Content string `json:"content"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
+		// limit (1, 3)
+		if !limiter.Allow() {
+			s.Error(w, r, http.StatusTooManyRequests, errTooManyRequest)
+			return
+		}
+
 		session, err := s.Session.Get(r, sessionName)
 		if err != nil {
 			s.Error(w, r, 404, errCantBeHere)
@@ -109,7 +121,6 @@ func (ctrl *ControllerPost) GetPost(s *server) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Создаем ответ с кодом 201 и передаем JSON
-
 		login := r.URL.Query().Get("author")
 		sortDate := r.URL.Query().Get("sort")
 		if sortDate != "ASC" && sortDate != "DESC" {
@@ -134,7 +145,9 @@ func (ctrl *ControllerPost) GetPost(s *server) http.HandlerFunc {
 				"created_at": post.ConverDateToString(),
 			})
 		}
-		s.Respond(w, r, 201, map[string]interface{}{"posts": res_posts})
+		s.Respond(w, r, http.StatusAccepted, map[string]interface{}{
+			"posts": res_posts,
+		})
 		s.Logger.Info("handle /getPost ", r.URL)
 	}
 

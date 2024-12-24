@@ -9,7 +9,7 @@
 <h1>Create a New Post</h1>
 <form id="postForm">
     <p>author: {{ .Login }}</p>
-  <textarea id="content" placeholder="Post Content" rows="5" required></textarea>
+  <textarea id="content" placeholder="Post Content" rows="5" cols="100"required></textarea>
   <button type="submit">Submit</button>
   <p id="error"></p>
   <p id="success"></p>
@@ -20,7 +20,7 @@
       e.preventDefault();
 
       const content = document.getElementById('content').value;
-
+      
       const err = document.getElementById("error");
       const success = document.getElementById("success");
 
