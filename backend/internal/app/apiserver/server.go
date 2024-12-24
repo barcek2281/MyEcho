@@ -6,6 +6,7 @@ import (
 	"github.com/barcek2281/MyEcho/internal/app/controller"
 	storage "github.com/barcek2281/MyEcho/internal/app/store"
 	"github.com/barcek2281/MyEcho/mail"
+	"github.com/barcek2281/MyEcho/middleware"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
@@ -19,8 +20,17 @@ type server struct {
 	controller     *controller.Controller
 	controllerPost *controller.ControllerPost
 	controllerUser *controller.ControllerUser
+	middleware     *middleware.Middleware
 	Env            Env
 }
+
+type ctxKey int8
+
+const (
+	sessionName        = "MyEcho"
+	ctxKeyUser  ctxKey = iota
+)
+
 
 func newServer(store *storage.Storage, session sessions.Store, logger *logrus.Logger, sender *mail.Sender) *server {
 	s := &server{
@@ -31,6 +41,7 @@ func newServer(store *storage.Storage, session sessions.Store, logger *logrus.Lo
 		controller:     controller.NewController(store, session, logger, sender),
 		controllerPost: controller.NewControllerPost(store, session, logger),
 		controllerUser: controller.NewControllerUser(store, session, logger),
+		middleware:     middleware.NewMiddleware(session, store),
 	}
 
 	s.ConfigureRouter()
@@ -66,9 +77,13 @@ func (s *server) ConfigureRouter() {
 	s.router.HandleFunc("/findUser", s.controllerUser.FindUser()).Methods("POST")
 
 	// // TODO: отдельно добавить ссылку для постов
-	s.router.HandleFunc("/createPost", s.controllerPost.CreatePost()).Methods("GET")
-	s.router.HandleFunc("/createPost", s.controllerPost.CreatePostReal()).Methods("POST")
 	s.router.HandleFunc("/getPost", s.controllerPost.GetPost()).Methods("GET")
+
+	postUrl := s.router.PathPrefix("/post").Subrouter()
+	postUrl.Use(s.middleware.AuthenicateUser)
+	postUrl.HandleFunc("/createPost", s.controllerPost.CreatePost()).Methods("GET")
+	postUrl.HandleFunc("/createPost", s.controllerPost.CreatePostReal()).Methods("POST")
+
 }
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

@@ -16,9 +16,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type ctxKey int8
+
 const (
 	SessionName       = "MyEcho"
 	pageNumberDefault = 5
+	ctxKeyUser        = 1
 )
 
 var (
@@ -47,27 +50,7 @@ func NewControllerPost(storage *storage.Storage, session sessions.Store, logger 
 
 func (ctrl *ControllerPost) CreatePost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		session, err := ctrl.session.Get(r, sessionName)
-		if err != nil {
-			Error(w, r, 404, errCantBeHere)
-			ctrl.logger.Warn("anon cant be here")
-			return
-		}
-
-		id, ok := session.Values["user_id"].(int)
-		if !ok {
-			Error(w, r, 404, errSessionTimeOut)
-			ctrl.logger.Warn(err)
-			return
-		}
-
-		u := &model.User{}
-		u, err = ctrl.storage.User().FindById(id)
-		if err != nil {
-			ctrl.logger.Error("WTF how it happen?", err)
-			Error(w, r, 404, errSessionTimeOut)
-			return
-		}
+		u := r.Context().Value(ctxKeyUser).(*model.User)
 
 		tmpl, err := template.ParseFiles("./templates/post.html")
 		if err != nil {
@@ -79,6 +62,7 @@ func (ctrl *ControllerPost) CreatePost() http.HandlerFunc {
 		if err != nil {
 			ctrl.logger.Warn("cannot execute template", err)
 			Error(w, r, 404, errSessionTimeOut)
+			return
 		}
 
 		ctrl.logger.Info("Handle /createPost GET")
