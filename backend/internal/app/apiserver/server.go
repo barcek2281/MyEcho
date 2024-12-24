@@ -20,16 +20,16 @@ type server struct {
 	Env        Env
 }
 
-func newServer(store *storage.Storage, session sessions.Store, env *Env) *server {
+func newServer(store *storage.Storage, session sessions.Store, logger *logrus.Logger, env *Env) *server {
 	s := &server{
 		router:  mux.NewRouter(),
-		Logger:  logrus.New(),
+		Logger:  logger,
 		storage: store,
 		Session: session,
 		Env:     *env,
 	}
+	
 	s.ConfigureRouter()
-
 	return s
 }
 
@@ -65,8 +65,8 @@ func (s *server) ConfigureRouter() {
 	s.router.HandleFunc("/createPost", controllerPost.CreatePost(s)).Methods("GET")
 	s.router.HandleFunc("/createPost", controllerPost.CreatePostReal(s)).Methods("POST")
 	s.router.HandleFunc("/getPost", controllerPost.GetPost(s)).Methods("GET")
-
 }
+
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.router.ServeHTTP(w, r)

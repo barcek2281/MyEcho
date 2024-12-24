@@ -82,9 +82,12 @@ package apiserver
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/barcek2281/MyEcho/internal/app/storage"
 	"github.com/gorilla/sessions"
+	"github.com/sirupsen/logrus"
+	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
 
 func Start(config *Config, env *Env) error {
@@ -93,7 +96,27 @@ func Start(config *Config, env *Env) error {
 		return err
 	}
 	session := sessions.NewCookieStore([]byte(config.CookieKey))
-	
-	s := newServer(store, session, env)
+
+	logger := logrus.New()
+	logger.SetFormatter(&prefixed.TextFormatter{
+		DisableColors: true,
+		TimestampFormat : "2006-01-02 15:04:05",
+		FullTimestamp:true,
+		ForceFormatting: true,
+	})
+	level, err := logrus.ParseLevel(env.LogLevel)
+	if err != nil {
+		return err
+	}
+	f, err := os.OpenFile(env.LogFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		return err
+	} else {
+		logger.Out = f
+	}
+
+	logger.SetLevel(level)
+
+	s := newServer(store, session, logger, env)
 	return http.ListenAndServe(config.BinAddr, s)
 }

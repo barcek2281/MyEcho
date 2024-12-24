@@ -4,7 +4,6 @@ package apiserver
 
 type Config struct {
 	BinAddr         string `toml:"bin_addr"`
-	LogLevel        string `toml:"log_level"`
 	DataBaseURL     string `toml:"database_url"`
 	CookieKey       string `toml:"cookie_key"`
 }
@@ -12,7 +11,6 @@ type Config struct {
 func NewConfig() *Config {
 	return &Config{
 		BinAddr:     ":8080",
-		LogLevel:    "info",
 		DataBaseURL: "postgres://postgres:admin@localhost:5432/api",
 		CookieKey:   "Cookie",
 	}
