@@ -37,7 +37,7 @@ func main() {
 
 	fmt.Println("http://localhost" + config.BinAddr)
 
-	if err := apiserver.Start(config, env); err != nil {
+	if err := apiserver.Start(config); err != nil {
 		log.Fatal(err)
 	}
 }

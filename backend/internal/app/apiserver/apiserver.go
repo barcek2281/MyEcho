@@ -84,13 +84,14 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/barcek2281/MyEcho/internal/app/storage"
+	"github.com/barcek2281/MyEcho/internal/app/store"
+	"github.com/barcek2281/MyEcho/mail"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
 
-func Start(config *Config, env *Env) error {
+func Start(config *Config) error {
 	store := storage.New(config.DataBaseURL)
 	if err := store.Open(); err != nil { // Ping db
 		return err
@@ -104,11 +105,11 @@ func Start(config *Config, env *Env) error {
 		FullTimestamp:true,
 		ForceFormatting: true,
 	})
-	level, err := logrus.ParseLevel(env.LogLevel)
+	level, err := logrus.ParseLevel(config.LogLevel)
 	if err != nil {
 		return err
 	}
-	f, err := os.OpenFile(env.LogFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	f, err := os.OpenFile(config.LogFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		return err
 	} else {
@@ -117,6 +118,8 @@ func Start(config *Config, env *Env) error {
 
 	logger.SetLevel(level)
 
-	s := newServer(store, session, logger, env)
+	sender := mail.NewSender(config.EmailTo, config.EmailToPassword)
+
+	s := newServer(store, session, logger, sender)
 	return http.ListenAndServe(config.BinAddr, s)
 }
