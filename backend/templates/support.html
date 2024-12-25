@@ -4,9 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>support | MyEcho</title>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <h1>Support & Help</h1>
+
+<div class="container">
+    
+        <h1>Support & Help</h1>
     <form id="support">
         <label for=""> choose problem or issue type: </label>
         <select id="problemType">
@@ -21,6 +25,11 @@
         <p id="result"></p>
         <button type="submit" style="margin-top:10px">submit</button>
     </form>
+
+    <p>back to <a href="/">Main page</a></p>
+
+</div>
+
     <script>
         document.getElementById("support").addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -46,6 +55,6 @@
             }
         });
     </script>
-    <p>back to <a href="/">Main page</a></p>
+    
 </body>
 </html>

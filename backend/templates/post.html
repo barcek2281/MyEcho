@@ -4,8 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MyEcho | Create Post</title>
+  <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
+
+<div class="container">
+
 <h1>Create a New Post</h1>
 <form id="postForm">
     <p>author: {{ .Login }}</p>
@@ -15,6 +19,9 @@
   <p id="success"></p>
 </form>
 <p>back to <a href="/">Main Page</a></p>
+
+</div>
+
 <script>
   document.getElementById('postForm').addEventListener('submit', async (e) => {
       e.preventDefault();
