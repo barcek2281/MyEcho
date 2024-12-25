@@ -17,6 +17,7 @@ import (
 
 const (
 	sessionName = "MyEcho"
+	sessionAdmin = "IsAdmin"
 )
 
 var (

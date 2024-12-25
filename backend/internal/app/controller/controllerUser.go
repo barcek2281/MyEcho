@@ -169,7 +169,7 @@ func (ctrl *ControllerUser) AdminLogin() http.HandlerFunc {
 			utils.Error(w, r, 404, errIncorrectPasswordOrEmail)
 			return
 		}
-		session, err := ctrl.session.Get(r, sessionName)
+		session, err := ctrl.session.Get(r, sessionAdmin)
 		session.Values["admin_id"] = a.ID
 		ctrl.session.Save(r, w, session)
 

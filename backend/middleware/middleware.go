@@ -12,6 +12,7 @@ import (
 
 const (
 	sessionName = "MyEcho"
+	sessionAdmin = "IsAdmin"
 	ctxKeyUser  = 1
 )
 
@@ -66,7 +67,7 @@ func (m *Middleware) AuthenicateAdmin(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		session, err := m.session.Get(r, sessionName)
+		session, err := m.session.Get(r, sessionAdmin)
 		id, ok := session.Values["admin_id"]
 		if !ok {
 			utils.Error(w, r, http.StatusBadGateway, errYouCantBeHere)
