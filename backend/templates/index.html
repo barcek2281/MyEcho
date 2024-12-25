@@ -1,15 +1,54 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Main page</title>
-    <link rel="stylesheet" href="internal/app/templates/style.css">
+    <title>Main Page | MyEcho</title>
+    <style>
+      .post {
+        border-style: inset;
+        margin: 5px;
+      }
+    </style>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-<h1>Main Page</h1>
-<a href="/register">Register</a>
-<a href="/users">Users</a>
+  <div class="container" >
+    <h1>MyEcho</h1>
+    {{ if .user }}
+    <h5>hello, {{ .user.Login }}</h5>
+    <div class="nav">
+        <a href="/logout">logout</a>
+        <a href="/post/createPost">Create Post</a>
+    </div>  
+    {{ else }}
+    <div class="nav">
+      <a href="/register">register </a>
+      <a href="/login">login</a>
+    </div>
+    {{ end }}
+    <!-- Фильтрация и сортировка -->
+    <div style="margin-top: 20px;">
+        <label for="author">Author:</label>
+        <input type="text" id="author" placeholder="insert author">
+        <button onclick="applyFilters()">Filter</button>
+    </div>
+
+    <div style="margin-top: 10px;">
+        <label for="sortDate">sort by date:</label>
+        <select id="sortDate">
+            <option value="DESC">desc</option>
+            <option value="ASC">asc</option>
+        </select>
+        <button onclick="applyFilters()">Sort</button>
+    </div>
+    <div id="posts"></div>
+    <div>
+      <p id="secret_p"></p>
+      <button onclick="changePage()">More.</button>
+    </div>
+    <footer>
+      <a href="/support">support</a>
+    </footer>
+    <script src="/static/js/getPage.js"></script>
 </body>
 </html>

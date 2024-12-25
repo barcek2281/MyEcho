@@ -1,3 +1,0 @@
-bin_addr = ":8080"
-log_level = "debug"
-database_url = "host=localhost user=postgres password=admin dbname=restapi_dev sslmode=disable"
