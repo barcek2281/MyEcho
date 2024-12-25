@@ -12,21 +12,20 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-  <div class="container">
+  <div class="container" >
     <h1>MyEcho</h1>
     {{ if .user }}
     <h5>hello, {{ .user.Login }}</h5>
     <div class="nav">
         <a href="/logout">logout</a>
-        <a href="/createPost">Create Post</a>
+        <a href="/post/createPost">Create Post</a>
     </div>  
     {{ else }}
-      <a href="/register">register </a>|
+    <div class="nav">
+      <a href="/register">register </a>
       <a href="/login">login</a>
+    </div>
     {{ end }}
-    <br>
-    <a href="/users">users</a>
-    <a href="/support">support</a>
     <!-- Фильтрация и сортировка -->
     <div style="margin-top: 20px;">
         <label for="author">Author:</label>
@@ -34,7 +33,7 @@
         <button onclick="applyFilters()">Filter</button>
     </div>
 
-    <div>
+    <div style="margin-top: 10px;">
         <label for="sortDate">sort by date:</label>
         <select id="sortDate">
             <option value="DESC">desc</option>
@@ -42,14 +41,14 @@
         </select>
         <button onclick="applyFilters()">Sort</button>
     </div>
-
-
-
     <div id="posts"></div>
     <div>
       <p id="secret_p"></p>
       <button onclick="changePage()">More.</button>
     </div>
+    <footer>
+      <a href="/support">support</a>
+    </footer>
     <script src="/static/js/getPage.js"></script>
 </body>
 </html>

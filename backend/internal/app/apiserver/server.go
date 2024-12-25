@@ -1,35 +1,50 @@
 package apiserver
 
 import (
-	"encoding/json"
-
 	"net/http"
 
-	"github.com/barcek2281/MyEcho/internal/app/storage"
+	"github.com/barcek2281/MyEcho/internal/app/controller"
+	storage "github.com/barcek2281/MyEcho/internal/app/store"
+	"github.com/barcek2281/MyEcho/mail"
+	"github.com/barcek2281/MyEcho/middleware"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
 )
 
 type server struct {
-	router     *mux.Router
-	Logger     *logrus.Logger
-	storage    *storage.Storage
-	Session    sessions.Store
-	controller *Controller
-	Env        Env
+	router         *mux.Router
+	Logger         *logrus.Logger
+	storage        *storage.Storage
+	Session        sessions.Store
+	controller     *controller.Controller
+	controllerPost *controller.ControllerPost
+	controllerUser *controller.ControllerUser
+	middleware     *middleware.Middleware
+	Env            Env
 }
 
-func newServer(store *storage.Storage, session sessions.Store, env *Env) *server {
-	s := &server{
-		router:  mux.NewRouter(),
-		Logger:  logrus.New(),
-		storage: store,
-		Session: session,
-		Env:     *env,
-	}
-	s.ConfigureRouter()
+type ctxKey int8
 
+const (
+	sessionName        = "MyEcho"
+	ctxKeyUser  ctxKey = iota
+)
+
+
+func newServer(store *storage.Storage, session sessions.Store, logger *logrus.Logger, sender *mail.Sender) *server {
+	s := &server{
+		router:         mux.NewRouter(),
+		Logger:         logger,
+		storage:        store,
+		Session:        session,
+		controller:     controller.NewController(store, session, logger, sender),
+		controllerPost: controller.NewControllerPost(store, session, logger),
+		controllerUser: controller.NewControllerUser(store, session, logger, sender),
+		middleware:     middleware.NewMiddleware(session, store),
+	}
+
+	s.ConfigureRouter()
 	return s
 }
 
@@ -37,49 +52,46 @@ func (s *server) ConfigureRouter() {
 	fs := http.FileServer(http.Dir("./static"))
 	s.router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
 
-	s.router.HandleFunc("/", controller.MainPage(s))
-	s.router.HandleFunc("/support", controller.SupportPage(s)).Methods("GET")
-	s.router.HandleFunc("/support", controller.SupportUser(s)).Methods("POST")
+	s.router.HandleFunc("/", s.controller.MainPage())
+	s.router.HandleFunc("/support", s.controller.SupportPage()).Methods("GET")
+	s.router.HandleFunc("/support", s.controller.SupportUser()).Methods("POST")
 
 	// мне бы ноормально называть функции, в будущем надо добавить под роутеры :(
-	s.router.HandleFunc("/hello", controller.handleHello(s)).Methods("GET")
-	s.router.HandleFunc("/hello", controller.handleHelloPost(s)).Methods("POST")
+	s.router.HandleFunc("/hello", s.controller.HandleHello()).Methods("GET")
+	s.router.HandleFunc("/hello", s.controller.HandleHelloPost()).Methods("POST")
 
-	// Надо будет поменять название функции
-	s.router.HandleFunc("/register", controller.registerUser(s)).Methods("POST")
-	s.router.HandleFunc("/register", controller.registerPage(s)).Methods("GET")
+	// // Надо будет поменять название функции
+	s.router.HandleFunc("/register", s.controller.RegisterUser()).Methods("POST")
+	s.router.HandleFunc("/register", s.controller.RegisterPage()).Methods("GET")
 
-	// я далеко не ушел с названием функций
-	s.router.HandleFunc("/login", controller.loginPage(s)).Methods("GET")
-	s.router.HandleFunc("/login", controller.loginUser(s)).Methods("POST")
+	// // я далеко не ушел с названием функций
+	s.router.HandleFunc("/login", s.controller.LoginPage()).Methods("GET")
+	s.router.HandleFunc("/login", s.controller.LoginUser()).Methods("POST")
 
-	s.router.HandleFunc("/logout", controller.LogoutHandler(s))
+	s.router.HandleFunc("/logout", s.controller.LogoutHandler())
 
-	// TODO: разделить для админа эти ссылка
-	s.router.HandleFunc("/users", controllerUser.getAllUsers(s)).Methods("GET")
-	s.router.HandleFunc("/updateUserLogin", controllerUser.UpdateUser(s)).Methods("POST")
-	s.router.HandleFunc("/deleteUser", controllerUser.DeleteUser(s)).Methods("POST")
-	s.router.HandleFunc("/findUser", controllerUser.FindUser(s)).Methods("POST")
+	
+	admin := s.router.PathPrefix("/admin").Subrouter()
+	admin.PathPrefix("/static/").Handler(http.StripPrefix("/admin/static/", fs))
+	admin.Use(s.middleware.AuthenicateAdmin)
+	admin.HandleFunc("/", s.controllerUser.AdminLoginPage()).Methods("GET")
+	admin.HandleFunc("/login", s.controllerUser.AdminLogin()).Methods("POST")
+	admin.HandleFunc("/register", s.controllerUser.AdminRegister()).Methods("POST")
+	admin.HandleFunc("/users", s.controllerUser.GetAllUsers()).Methods("GET")
+	admin.HandleFunc("/updateUserLogin", s.controllerUser.UpdateUser()).Methods("POST")
+	admin.HandleFunc("/deleteUser", s.controllerUser.DeleteUser()).Methods("POST")
+	admin.HandleFunc("/findUser", s.controllerUser.FindUser()).Methods("POST")
+	admin.HandleFunc("/sendMessage", s.controllerUser.SendMessage()).Methods("POST")
+	// Лучше его так оставить
+	s.router.HandleFunc("/getPost", s.controllerPost.GetPost()).Methods("GET")
 
-	// TODO: отдельно добавить ссылку для постов
-	s.router.HandleFunc("/createPost", controllerPost.CreatePost(s)).Methods("GET")
-	s.router.HandleFunc("/createPost", controllerPost.CreatePostReal(s)).Methods("POST")
-	s.router.HandleFunc("/getPost", controllerPost.GetPost(s)).Methods("GET")
+	postUrl := s.router.PathPrefix("/post").Subrouter()
+	postUrl.Use(s.middleware.AuthenicateUser)
+	postUrl.HandleFunc("/createPost", s.controllerPost.CreatePost()).Methods("GET")
+	postUrl.HandleFunc("/createPost", s.controllerPost.CreatePostReal()).Methods("POST")
 
 }
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.router.ServeHTTP(w, r)
-}
-
-func (s *server) Error(w http.ResponseWriter, r *http.Request, code int, err error) {
-	s.Respond(w, r, code, map[string]string{"error": err.Error()})
-
-}
-func (s *server) Respond(w http.ResponseWriter, r *http.Request, code int, data interface{}) {
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(code)
-	if data != nil {
-		json.NewEncoder(w).Encode(data)
-	}
 }

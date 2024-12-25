@@ -14,3 +14,10 @@ CREATE TABLE posts (
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE admins (
+    id bigserial not null primary key,
+    email varchar not null unique,
+    name varchar not null,
+    password varchar not null,
+    date TIMESTAMP NOT NULL DEFAULT NOW()
+);

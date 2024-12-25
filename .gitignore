@@ -21,6 +21,7 @@ MyEcho
 # Go workspace file
 go.work
 go.work.sum
+*.log
 
 # env file
 .env

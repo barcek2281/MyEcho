@@ -82,18 +82,44 @@ package apiserver
 
 import (
 	"net/http"
+	"os"
 
-	"github.com/barcek2281/MyEcho/internal/app/storage"
+	"github.com/barcek2281/MyEcho/internal/app/store"
+	"github.com/barcek2281/MyEcho/mail"
 	"github.com/gorilla/sessions"
+	"github.com/sirupsen/logrus"
+	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
 
-func Start(config *Config, env *Env) error {
+func Start(config *Config) error {
 	store := storage.New(config.DataBaseURL)
 	if err := store.Open(); err != nil { // Ping db
 		return err
 	}
 	session := sessions.NewCookieStore([]byte(config.CookieKey))
-	
-	s := newServer(store, session, env)
+
+	logger := logrus.New()
+	logger.SetFormatter(&prefixed.TextFormatter{
+		DisableColors: true,
+		TimestampFormat : "2006-01-02 15:04:05",
+		FullTimestamp:true,
+		ForceFormatting: true,
+	})
+	level, err := logrus.ParseLevel(config.LogLevel)
+	if err != nil {
+		return err
+	}
+	f, err := os.OpenFile(config.LogFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+	if err != nil {
+		return err
+	} else {
+		logger.Out = f
+	}
+
+	logger.SetLevel(level)
+
+	sender := mail.NewSender(config.EmailTo, config.EmailToPassword)
+
+	s := newServer(store, session, logger, sender)
 	return http.ListenAndServe(config.BinAddr, s)
 }

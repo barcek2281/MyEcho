@@ -18,6 +18,7 @@
         <textarea id="problemText" placeholder="write your problem (max 500 char)" rows="10" cols="100" maxlength="800" required></textarea>
         <br>
         <p style="color:gray">*if you sending email without authentication, your email will be anonymous</p>
+        <p id="result"></p>
         <button type="submit" style="margin-top:10px">submit</button>
     </form>
     <script>
@@ -25,6 +26,7 @@
             e.preventDefault();
             const problemText = document.getElementById("problemText").value;
             const problemType = document.getElementById("problemType").value;
+            const result = document.getElementById("result")
 
             const response = await fetch('/support', {
                 method: 'POST',
@@ -36,9 +38,11 @@
             });
 
             if (response.ok) {
+                result.textContent = "correct: mail send"
                 console.log("OK");
             }else {
-                console.log("not OK");
+                result.textContent = "error: Something happen wrong"
+                // console.log("not OK");
             }
         });
     </script>

@@ -24,7 +24,7 @@
       const err = document.getElementById("error");
       const success = document.getElementById("success");
 
-      const response = await fetch('/createPost', {
+      const response = await fetch('/post/createPost', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
