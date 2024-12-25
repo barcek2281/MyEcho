@@ -114,3 +114,4 @@ func (r *UserRepository) GetAll(limit int) ([]*model.User, error) {
 	}
 	return users, nil
 }
+

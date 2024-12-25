@@ -12,6 +12,7 @@ type Storage struct {
 	db             *sql.DB
 	userRepository *UserRepository
 	postRepository *PostRepository
+	adminRepository *AdminRepository
 }
 
 // New Config
@@ -54,4 +55,13 @@ func (s *Storage) Post() *PostRepository {
 		}
 	}
 	return s.postRepository
+}
+
+func (s *Storage) Admin() *AdminRepository {
+	if s.adminRepository == nil {
+		s.adminRepository = &AdminRepository{
+			storage: s,
+		}
+	}
+	return s.adminRepository
 }

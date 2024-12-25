@@ -70,13 +70,18 @@ func (s *server) ConfigureRouter() {
 
 	s.router.HandleFunc("/logout", s.controller.LogoutHandler())
 
-	// TODO: разделить для админа эти ссылка
-	s.router.HandleFunc("/users", s.controllerUser.GetAllUsers()).Methods("GET")
-	s.router.HandleFunc("/updateUserLogin", s.controllerUser.UpdateUser()).Methods("POST")
-	s.router.HandleFunc("/deleteUser", s.controllerUser.DeleteUser()).Methods("POST")
-	s.router.HandleFunc("/findUser", s.controllerUser.FindUser()).Methods("POST")
+	
+	admin := s.router.PathPrefix("/admin").Subrouter()
+	admin.Use(s.middleware.AuthenicateAdmin)
+	admin.Handle("/", s.controllerUser.AdminLoginPage()).Methods("GET")
+	admin.Handle("/login", s.controllerUser.AdminLogin()).Methods("POST")
+	admin.Handle("/register", s.controllerUser.AdminRegister()).Methods("POST")
+	admin.HandleFunc("/users", s.controllerUser.GetAllUsers()).Methods("GET")
+	admin.HandleFunc("/updateUserLogin", s.controllerUser.UpdateUser()).Methods("POST")
+	admin.HandleFunc("/deleteUser", s.controllerUser.DeleteUser()).Methods("POST")
+	admin.HandleFunc("/findUser", s.controllerUser.FindUser()).Methods("POST")
 
-	// // TODO: отдельно добавить ссылку для постов
+	// Лучше его так оставить
 	s.router.HandleFunc("/getPost", s.controllerPost.GetPost()).Methods("GET")
 
 	postUrl := s.router.PathPrefix("/post").Subrouter()

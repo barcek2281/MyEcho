@@ -12,6 +12,7 @@ import (
 
 	"github.com/barcek2281/MyEcho/internal/app/model"
 	storage "github.com/barcek2281/MyEcho/internal/app/store"
+	"github.com/barcek2281/MyEcho/pkg/utils"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
 )
@@ -61,7 +62,7 @@ func (ctrl *ControllerPost) CreatePost() http.HandlerFunc {
 		err = tmpl.Execute(w, u)
 		if err != nil {
 			ctrl.logger.Warn("cannot execute template", err)
-			Error(w, r, 404, errSessionTimeOut)
+			utils.Error(w, r, 404, errSessionTimeOut)
 			return
 		}
 
@@ -77,26 +78,26 @@ func (ctrl *ControllerPost) CreatePostReal() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// limit (1, 3)
 		if !limiter.Allow() {
-			Error(w, r, http.StatusTooManyRequests, errTooManyRequest)
+			utils.Error(w, r, http.StatusTooManyRequests, errTooManyRequest)
 			return
 		}
 
 		session, err := ctrl.session.Get(r, sessionName)
 		if err != nil {
-			Error(w, r, 404, errCantBeHere)
+			utils.Error(w, r, 404, errCantBeHere)
 			ctrl.logger.Warn("anon cant be here")
 			return
 		}
 
 		user_id, ok := session.Values["user_id"].(int)
 		if !ok {
-			Error(w, r, 404, errSessionTimeOut)
+			utils.Error(w, r, 404, errSessionTimeOut)
 			ctrl.logger.Warn(err)
 			return
 		}
 		req := Request{}
 		if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-			Error(w, r, 404, err)
+			utils.Error(w, r, 404, err)
 			ctrl.logger.Warn(err)
 			return
 		}
@@ -106,12 +107,12 @@ func (ctrl *ControllerPost) CreatePostReal() http.HandlerFunc {
 			Content: req.Content,
 		}
 		if err := ctrl.storage.Post().Create(post); err != nil {
-			Error(w, r, http.StatusBadRequest, err)
+			utils.Error(w, r, http.StatusBadRequest, err)
 			ctrl.logger.Warn(err)
 			return
 		}
 
-		Respond(w, r, http.StatusCreated, map[string]string{"status": "Succesfully, created post"})
+		utils.Response(w, r, http.StatusCreated, map[string]string{"status": "Succesfully, created post"})
 		ctrl.logger.Info("handle /createPost POST")
 	}
 }
@@ -133,7 +134,7 @@ func (ctrl *ControllerPost) GetPost() http.HandlerFunc {
 		posts, err := ctrl.storage.Post().GetAllWithAuthors(login, sortDate, pageNumberDefault, (page-1)*pageNumberDefault)
 		if err != nil {
 			ctrl.logger.Warn(err)
-			Error(w, r, 504, err)
+			utils.Error(w, r, 504, err)
 			return
 		}
 		res_posts := make([]map[string]string, 0)
@@ -144,7 +145,7 @@ func (ctrl *ControllerPost) GetPost() http.HandlerFunc {
 				"created_at": post.ConverDateToString(),
 			})
 		}
-		Respond(w, r, http.StatusAccepted, map[string]interface{}{
+		utils.Response(w, r, http.StatusAccepted, map[string]interface{}{
 			"posts": res_posts,
 		})
 		ctrl.logger.Info("handle /getPost ", r.URL)

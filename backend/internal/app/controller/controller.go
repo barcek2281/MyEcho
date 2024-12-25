@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -9,12 +10,17 @@ import (
 	"github.com/barcek2281/MyEcho/internal/app/model"
 	storage "github.com/barcek2281/MyEcho/internal/app/store"
 	"github.com/barcek2281/MyEcho/mail"
+	"github.com/barcek2281/MyEcho/pkg/utils"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
 )
 
 const (
 	sessionName = "MyEcho"
+)
+
+var (
+	errIncorrectPasswordOrEmail = errors.New("Incorrect password or email")
 )
 
 type Controller struct {
@@ -30,18 +36,6 @@ func NewController(storage *storage.Storage, session sessions.Store, logger *log
 		session: session,
 		logger:  logger,
 		sender:  sender,
-	}
-}
-
-func Error(w http.ResponseWriter, r *http.Request, code int, err error) {
-	Respond(w, r, code, map[string]string{"error": err.Error()})
-}
-
-func Respond(w http.ResponseWriter, r *http.Request, code int, data interface{}) {
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(code)
-	if data != nil {
-		json.NewEncoder(w).Encode(data)
 	}
 }
 
@@ -224,18 +218,18 @@ func (ctrl *Controller) LoginUser() http.HandlerFunc {
 		req := Request{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			ctrl.logger.Warn(err)
-			// ctrl.Error(w, r, 404, err)
+			utils.Error(w, r, 404, err)
 			return
 		}
 
 		u, err := ctrl.storage.User().FindByEmail(req.Email)
 		if err != nil || !u.ComparePassword(req.Password) {
-			// ctrl.Error(w, r, 404, errIncorrectPasswordOrEmail)
+			utils.Error(w, r, 404, errIncorrectPasswordOrEmail)
 			return
 		}
 		session, err := ctrl.session.Get(r, sessionName)
 		if err != nil {
-			// ctrl.Error(w, r, 404, err)
+			utils.Error(w, r, 404, err)
 			return
 		}
 		session.Values["user_id"] = u.ID
@@ -293,7 +287,7 @@ func (ctrl *Controller) SupportUser() http.HandlerFunc {
 		req := Request{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			ctrl.logger.Error(err)
-			Error(w, r, http.StatusBadRequest, err)
+			utils.Error(w, r, http.StatusBadRequest, err)
 			return
 		}
 		email := ""
@@ -312,7 +306,7 @@ func (ctrl *Controller) SupportUser() http.HandlerFunc {
 		err = ctrl.sender.SendToSupport(req.TypeProblem, req.Text, email)
 		if err != nil {
 			ctrl.logger.Warn(err)
-			Error(w, r, http.StatusNoContent, err)
+			utils.Error(w, r, http.StatusNoContent, err)
 			return
 		}
 		ctrl.logger.Info("handle support/ POST")

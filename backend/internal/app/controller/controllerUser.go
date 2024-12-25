@@ -6,7 +6,9 @@ import (
 	"strconv"
 	"text/template"
 
+	"github.com/barcek2281/MyEcho/internal/app/model"
 	storage "github.com/barcek2281/MyEcho/internal/app/store"
+	"github.com/barcek2281/MyEcho/pkg/utils"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
 )
@@ -30,7 +32,7 @@ func (ctrl *ControllerUser) GetAllUsers() http.HandlerFunc {
 		all, err := ctrl.storage.User().GetAll(20)
 
 		if err != nil {
-			Error(w, r, http.StatusNotFound, err)
+			utils.Error(w, r, http.StatusNotFound, err)
 			ctrl.logger.Error(err)
 			return
 		}
@@ -65,7 +67,7 @@ func (ctrl *ControllerUser) UpdateUser() http.HandlerFunc {
 
 		err := ctrl.storage.User().ChangeLoginByEmail(req.NewLogin, req.Email)
 		if err != nil {
-			Error(w, r, http.StatusInternalServerError, err)
+			utils.Error(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -86,14 +88,14 @@ func (ctrl *ControllerUser) DeleteUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := Request{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			Error(w, r, http.StatusBadRequest, err)
+			utils.Error(w, r, http.StatusBadRequest, err)
 			ctrl.logger.Error(err)
 			return
 		}
 
 		err := ctrl.storage.User().DeleteByEmail(req.Email)
 		if err != nil {
-			Error(w, r, http.StatusBadRequest, err)
+			utils.Error(w, r, http.StatusBadRequest, err)
 
 			ctrl.logger.Error(err)
 
@@ -121,7 +123,7 @@ func (ctrl *ControllerUser) FindUser() http.HandlerFunc {
 		}
 		u, err := ctrl.storage.User().FindByEmail(req.Email)
 		if err != nil {
-			Error(w, r, http.StatusBadRequest, err)
+			utils.Error(w, r, http.StatusBadRequest, err)
 			ctrl.logger.Warn("unhandle /findUser POST", err)
 			return
 		}
@@ -133,5 +135,71 @@ func (ctrl *ControllerUser) FindUser() http.HandlerFunc {
 		})
 		ctrl.logger.Info("handle /findUser POST")
 
+	}
+}
+
+func (ctrl *ControllerUser) AdminLoginPage() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		tmpl, err := template.ParseFiles("./templates/admin_panel.html")
+		if err != nil {
+			utils.Error(w, r, 504, err)
+			return
+		}
+
+		tmpl.Execute(w, nil)
+		ctrl.logger.Info("handle /admin/ GET")
+	}
+}
+
+func (ctrl *ControllerUser) AdminLogin() http.HandlerFunc {
+	type Request struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req := Request{}
+
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			ctrl.logger.Warn(err)
+			utils.Error(w, r, 404, err)
+			return
+		}
+		a, err := ctrl.storage.Admin().FindByEmail(req.Email)
+		if err != nil || !a.ComparePassword(req.Password) {
+			utils.Error(w, r, 404, errIncorrectPasswordOrEmail)
+			return
+		}
+		session, err := ctrl.session.Get(r, sessionName)
+		session.Values["admin_id"] = a.ID
+		ctrl.session.Save(r, w, session)
+
+		ctrl.logger.Info("handle /admin/login POST")
+	}
+}
+
+func (ctrl *ControllerUser) AdminRegister() http.HandlerFunc {
+	type Request struct {
+		Email    string `json:"email"`
+		Name     string `json:"name"`
+		Password string `json:"password"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req := &Request{}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			utils.Error(w,r,http.StatusBadRequest, err)
+			return
+		}
+		a := &model.Admin{
+			Email: req.Email,
+			Name: req.Name,
+			Password: req.Password,
+		}
+
+		err := ctrl.storage.Admin().Create(a)
+		if err != nil {
+			utils.Error(w, r, http.StatusBadGateway, err)
+		}
+
+		ctrl.logger.Info("Handle /admin/register/ POST")
 	}
 }
