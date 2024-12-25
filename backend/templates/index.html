@@ -26,7 +26,6 @@
     {{ end }}
     <br>
     <a href="/users">users</a>
-    <a href="/support">support</a>
     <!-- Фильтрация и сортировка -->
     <div style="margin-top: 20px;">
         <label for="author">Author:</label>
@@ -34,7 +33,7 @@
         <button onclick="applyFilters()">Filter</button>
     </div>
 
-    <div>
+    <div style="margin-top: 10px;">
         <label for="sortDate">sort by date:</label>
         <select id="sortDate">
             <option value="DESC">desc</option>
@@ -50,6 +49,9 @@
       <p id="secret_p"></p>
       <button onclick="changePage()">More.</button>
     </div>
+    <footer>
+      <a href="/support">support</a>
+    </footer>
     <script src="/static/js/getPage.js"></script>
 </body>
 </html>
