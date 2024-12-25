@@ -103,6 +103,7 @@ button:hover {
 /* Стили постов */
 #posts {
     margin-top: 20px;
+    overflow-wrap: break-word;
 }
 
 .post {
@@ -162,6 +163,26 @@ a {
     margin: 10px;
 }
 
+#error{
+    color: red;
+    font-size: 20px;
+}
+
+.InputContainer {
+    display: flex; /* Включаем Flexbox */
+    flex-direction: column; /* Расположение элементов вертикально */
+    gap: 10px; /* Зазор между элементами */
+    justify-content: center;   
+    align-items: center; 
+  } 
+  
+  .InputContainer input {
+    width: 300px; /* Устанавливаем фиксированную ширину */
+    max-width: 100%; /* Ограничиваем ширину при необходимости */
+    padding: 8px; /* Добавляем внутренние отступы */
+    box-sizing: border-box; /* Учитываем отступы в ширине */
+  }
+  
 /* Адаптивность */
 @media (max-width: 600px) {
     .container {

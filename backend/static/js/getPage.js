@@ -40,7 +40,7 @@ function displayPosts(posts) {
     }
     posts.forEach(post => {
         const postElement = document.createElement('div');
-        postElement.innerHTML = `<div class="post"><p>${post.content}</p><p>Author: ${post.author}</p><p>Date: ${post.created_at}</p></div>`;
+        postElement.innerHTML = `<div class="post"><p style="font-family: Courier New, sans-serif; color: blue; font-size: 16px;">${post.author}</p><p style="font-size: 25px;">${post.content}</p><p style="font-size: 10px; text-align: right;">Date: ${post.created_at}</p></div>`;
         postsDiv.appendChild(postElement);
     });
     currentPage++;
