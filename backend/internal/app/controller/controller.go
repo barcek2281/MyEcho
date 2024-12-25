@@ -3,10 +3,9 @@ package controller
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"html/template"
 	"net/http"
-
+	"fmt"
 	"github.com/barcek2281/MyEcho/internal/app/model"
 	storage "github.com/barcek2281/MyEcho/internal/app/store"
 	"github.com/barcek2281/MyEcho/mail"
@@ -22,6 +21,7 @@ const (
 
 var (
 	errIncorrectPasswordOrEmail = errors.New("Incorrect password or email")
+	errYouDontHaveUsers = errors.New("YOU DONT HAVE USERS DUMBASS")
 )
 
 type Controller struct {
@@ -54,19 +54,19 @@ func (ctrl *Controller) MainPage() http.HandlerFunc {
 		if err != nil {
 			ctrl.logger.Info("no session")
 		}
-
 		if session != nil {
 			userID, ok := session.Values["user_id"].(int)
 			if !ok {
 				ctrl.logger.Warn("session timeout!", err)
-			} else {
-				user, err = ctrl.storage.User().FindById(userID)
-				if err != nil {
-					ctrl.logger.Warn("warn lol )", err)
+				} else {
+					user, err = ctrl.storage.User().FindById(userID)
+					if err != nil {
+						ctrl.logger.Warn("warn lol )", err)
+					}
 				}
 			}
-		}
-
+			
+		
 		data := map[string]interface{}{
 			"user": user,
 		}
@@ -157,7 +157,7 @@ func (ctrl *Controller) RegisterUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := Request{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			// ctrl.Error(w, r, http.StatusBadRequest, err)
+			utils.Error(w, r, http.StatusBadRequest, err)
 			ctrl.logger.Error(err)
 			return
 		}
@@ -169,24 +169,24 @@ func (ctrl *Controller) RegisterUser() http.HandlerFunc {
 		}
 
 		if err := ctrl.storage.User().Create(&u); err != nil {
-			// ctrl.Error(w, r, http.StatusBadRequest, err)
+			utils.Error(w, r, http.StatusBadRequest, err)
 			ctrl.logger.Warn(err)
 			return
 		}
 
 		session, err := ctrl.session.Get(r, sessionName)
 		if err != nil {
-			// ctrl.Error(w, r, 404, err)
+			utils.Error(w, r, 404, err)
 			ctrl.logger.Warn(err)
 			return
 		}
 
 		session.Values["user_id"] = u.ID
 		if err := ctrl.session.Save(r, w, session); err != nil {
-			// ctrl.Error(w, r, 404, err)
+			utils.Error(w, r, 404, err)
 			return
 		}
-		// ctrl.Respond(w, r, http.StatusCreated, map[string]string{"status": "Succesfully, created user"})
+		utils.Response(w, r, http.StatusCreated, map[string]string{"status": "Succesfully, created user"})
 
 		ctrl.logger.Info("handle /register POST")
 	}

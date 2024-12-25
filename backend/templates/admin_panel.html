@@ -3,62 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel Login</title>
-    <link rel="stylesheet" href="/static/css/adminStyle.css">
+    <title>MyEcho | User List</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            font-weight: bold;
+        }
+        form {
+            margin-top: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input, button {
+            padding: 8px;
+            width: 100%;
+            max-width: 300px;
+            margin-bottom: 10px;
+        }
+
+    </style>
 </head>
 <body>
-    <div class="login-container">
-        <h1>Admin Login</h1>
-        <form id="loginForm" method="POST" action="/admin/login">
-            <div class="form-group">
-                <label for="email">email</label>
-                <input type="text" id="email" name="email" placeholder="Enter your email" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter your password" required>
-            </div>
-            <button type="submit" class="btn">Login</button>
-        </form>
-        <p id="errorMessage" class="error-message"></p>
+<h1>List of Users</h1>
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Email</th>
+        <th>Login</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{range .}}
+    <tr>
+        <td>{{.ID}}</td>
+        <td>{{.Email}}</td>
+        <td>{{.Login}}</td>
+    </tr>
+    {{end}}
+    </tbody>
+</table>
+
+<h2>Delete User</h2>
+<form id="deleteForm">
+    <div class="input-group">
+        <label for="deleteEmail">Email:</label>
+        <input type="email" id="deleteEmail" placeholder="Enter user's email" required>
+    </div>
+    <button type="submit">delete user</button>
+</form>
+
+<h2>Update User Login</h2>
+<form id="updateForm">
+    <div class="input-group">
+        <label for="updateEmail">Email:</label>
+        <input type="email" id="updateEmail" placeholder="Enter user's email" required>
     </div>
 
-    <script>
-        document.getElementById('loginForm').addEventListener('submit', function(event) {
-            event.preventDefault(); // Prevent default form submission
+    <div class="input-group">
+        <label for="newLogin">New Login:</label>
+        <input type="text" id="newLogin" placeholder="Enter new login" required>
+    </div>
+    <button type="submit">update login</button>
+</form>
 
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-
-            // Make a POST request
-            fetch('/admin/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email:email, password:password }),
-            })
-            .then(response => {
-                if (response.ok) {
-                    // Redirect to admin panel or show success
-                    window.location.href = '/admin/users';
-                } else {
-                    
-                    return response.json();
-                }
-            })
-            .then(data => {
-                if (data) {
-                    // Show error message
-                    console.log(data)
-                    document.getElementById('errorMessage').textContent = data["error"];
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('errorMessage').textContent = 'An unexpected error occurred.';
-            });
-        });
-    </script>
+<h2>Get user by email</h2>
+<form id="findForm">
+    <div class="input-group">
+        <label for="updateEmail">Email:</label>
+        <input type="email" id="findEmail" placeholder="Enter user's email" required>
+    </div>
+    <button type="submit"> find user </button>
+</form>
+<p id="resultId"></p>
+<p id="resultEmail"></p>
+<p id="resultLogin"></p>
+<h2>send message to users</h2>
+<form id="sendInfo">
+    <label for="message"> write info for users</label>
+    <textarea name="message" id="message" cols="100" rows="10" placeholder="only body of email">
+    </textarea>
+    <br>
+    <button type="submit">submit</button>
+</form>
+<script src="./static/js/admin.js"></script>
+<p>back to <a href="/">Main page</a> </p>
 </body>
 </html>

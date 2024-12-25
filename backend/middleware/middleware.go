@@ -34,20 +34,20 @@ func NewMiddleware(session sessions.Store, storage *storage.Storage) *Middleware
 func (m *Middleware) AuthenicateUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sessions, err := m.session.Get(r, sessionName)
-		// TODO: refactor errors
+		
 		if err != nil {
-			w.Write([]byte("you cant be here"))
+			utils.Error(w, r, http.StatusBadGateway, errYouCantBeHere)
 			return
 		}
 		id, ok := sessions.Values["user_id"]
 		if !ok {
-			w.Write([]byte("you cant be here"))
+			utils.Error(w, r, http.StatusBadGateway, errYouCantBeHere)
 			return
 		}
 		u, err := m.storage.User().FindById(id.(int))
 
 		if err != nil {
-			w.Write([]byte("you cant be here"))
+			utils.Error(w, r, http.StatusBadGateway, errYouCantBeHere)
 			return
 		}
 

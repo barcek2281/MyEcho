@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-  <div class="container">
+  <div class="container" >
     <h1>MyEcho</h1>
     {{ if .user }}
     <h5>hello, {{ .user.Login }}</h5>
@@ -21,8 +21,10 @@
         <a href="/post/createPost">Create Post</a>
     </div>  
     {{ else }}
-      <a href="/register">register </a>|
+    <div class="nav">
+      <a href="/register">register </a>
       <a href="/login">login</a>
+    </div>
     {{ end }}
     <!-- Фильтрация и сортировка -->
     <div style="margin-top: 20px;">

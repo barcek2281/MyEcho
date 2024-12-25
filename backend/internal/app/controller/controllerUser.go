@@ -2,12 +2,14 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"text/template"
 
 	"github.com/barcek2281/MyEcho/internal/app/model"
 	storage "github.com/barcek2281/MyEcho/internal/app/store"
+	"github.com/barcek2281/MyEcho/mail"
 	"github.com/barcek2281/MyEcho/pkg/utils"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
@@ -17,13 +19,15 @@ type ControllerUser struct {
 	storage *storage.Storage
 	session sessions.Store
 	logger  *logrus.Logger
+	sender  *mail.Sender
 }
 
-func NewControllerUser(storage *storage.Storage, session sessions.Store, logger *logrus.Logger) *ControllerUser {
+func NewControllerUser(storage *storage.Storage, session sessions.Store, logger *logrus.Logger, sender *mail.Sender) *ControllerUser {
 	return &ControllerUser{
 		storage: storage,
 		session: session,
 		logger:  logger,
+		sender:  sender,
 	}
 }
 
@@ -37,7 +41,7 @@ func (ctrl *ControllerUser) GetAllUsers() http.HandlerFunc {
 			return
 		}
 		w.Header().Set("Content-Type", "http")
-		tmpl, err := template.ParseFiles("./templates/users.html")
+		tmpl, err := template.ParseFiles("./templates/admin_panel.html")
 		if err != nil {
 			ctrl.logger.Error(err)
 			return
@@ -138,9 +142,44 @@ func (ctrl *ControllerUser) FindUser() http.HandlerFunc {
 	}
 }
 
+func (ctrl *ControllerUser) SendMessage() http.HandlerFunc {
+	type Request struct {
+		Msg string `json:"msg"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req := &Request{}
+		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+			utils.Error(w, r, http.StatusBadRequest, err)
+			return
+		}
+		users, err := ctrl.storage.User().GetAllWithoutLimit()
+		if err != nil {
+			
+			utils.Error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+		people := make([]string, 0)
+		for _, user := range users {
+			people = append(people, user.Email)
+		}
+		if len(people) <= 0{
+			utils.Error(w, r, 503, errYouDontHaveUsers)
+			return
+		}
+		err = ctrl.sender.SendToEveryPerson("hello, dear users", req.Msg, people)
+		if err != nil {
+			fmt.Println(err)
+			utils.Error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+		utils.Response(w, r, 202, nil)
+		ctrl.logger.Info("Handle /admin/sendMessage POST")
+	}
+}
+
 func (ctrl *ControllerUser) AdminLoginPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tmpl, err := template.ParseFiles("./templates/admin_panel.html")
+		tmpl, err := template.ParseFiles("./templates/admin_login.html")
 		if err != nil {
 			utils.Error(w, r, 504, err)
 			return
@@ -172,7 +211,7 @@ func (ctrl *ControllerUser) AdminLogin() http.HandlerFunc {
 		session, err := ctrl.session.Get(r, sessionAdmin)
 		session.Values["admin_id"] = a.ID
 		ctrl.session.Save(r, w, session)
-
+		http.Redirect(w, r, "/admin/users", 202)
 		ctrl.logger.Info("handle /admin/login POST")
 	}
 }
@@ -186,12 +225,12 @@ func (ctrl *ControllerUser) AdminRegister() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := &Request{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			utils.Error(w,r,http.StatusBadRequest, err)
+			utils.Error(w, r, http.StatusBadRequest, err)
 			return
 		}
 		a := &model.Admin{
-			Email: req.Email,
-			Name: req.Name,
+			Email:    req.Email,
+			Name:     req.Name,
 			Password: req.Password,
 		}
 

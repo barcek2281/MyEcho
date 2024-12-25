@@ -115,3 +115,23 @@ func (r *UserRepository) GetAll(limit int) ([]*model.User, error) {
 	return users, nil
 }
 
+
+func (r *UserRepository) GetAllWithoutLimit() ([]*model.User, error) {
+	rows, err := r.storage.db.Query("SELECT id, email, login, password FROM users ORDER BY id")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var users []*model.User
+	for rows.Next() {
+		u := &model.User{}
+		if err := rows.Scan(&u.ID, &u.Email, &u.Login, &u.Password); err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return users, nil
+}
