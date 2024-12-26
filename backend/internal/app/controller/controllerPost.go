@@ -33,6 +33,7 @@ var (
 	errTooManyRequest = errors.New("Too many request dude")
 
 	limiter = rate.NewLimiter(1, 3)
+	limiterSupport = rate.NewLimiter(1, 1)
 )
 
 type ControllerPost struct {
@@ -120,7 +121,7 @@ func (ctrl *ControllerPost) CreatePostReal() http.HandlerFunc {
 func (ctrl *ControllerPost) GetPost() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Создаем ответ с кодом 201 и передаем JSON
+		
 		login := r.URL.Query().Get("author")
 		sortDate := r.URL.Query().Get("sort")
 		if sortDate != "ASC" && sortDate != "DESC" {

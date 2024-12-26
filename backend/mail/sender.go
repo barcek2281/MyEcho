@@ -1,6 +1,12 @@
 package mail
 
-import "net/smtp"
+import (
+	"bytes"
+	"fmt"
+	"net/smtp"
+
+	"github.com/barcek2281/MyEcho/pkg/utils"
+)
 
 type Sender struct {
 	emailTo         string
@@ -14,16 +20,27 @@ func NewSender(emailFrom, emailPassword string) *Sender {
 	}
 }
 
-func (send *Sender) SendToSupport(head, body, who string) error {
-	auth := smtp.PlainAuth("hitler", send.emailTo, send.emailToPassword, "smtp.gmail.com")
+func (send *Sender) SendToSupport(subject, body, who, filename string, data *string) error {
+	auth := smtp.PlainAuth("lol", send.emailTo, send.emailToPassword, "smtp.gmail.com")
 
-	to := []string{send.emailTo}
+	headers := "MIME-Version: 1.0\n" +
+		"Content-Type: multipart/mixed; boundary=boundary\n\n"
 
-	msg := "Subject: " + head +
-		"\r\n\n" +
-		body + "\r\n" + who
+	message := bytes.NewBuffer(nil)
+	message.WriteString("Subject: "+ subject + "\n")
+	message.WriteString(headers)
+	message.WriteString("--boundary\n")
+	message.WriteString("Content-Type: text/plain; charset=\"utf-8\"\n\n")
+	message.WriteString(body)
+	message.WriteString("\n\n--boundary\n")
+	message.WriteString(fmt.Sprintf("Content-Type: text/plain; name=\"%s\"\n", filename))
+	message.WriteString("Content-Transfer-Encoding: base64\n")
+	message.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=\"%s\"\n\n", filename))
+	message.WriteString((*data)[utils.FindSymbol(data, ','):])
+	message.WriteString("\n--boundary--")
+	
 
-	err := smtp.SendMail("smtp.gmail.com:587", auth, "", to, []byte(msg))
+	err := smtp.SendMail("smtp.gmail.com:587", auth, "", []string{send.emailTo}, message.Bytes())
 	if err != nil {
 		return err
 	}
@@ -41,3 +58,5 @@ func (send *Sender) SendToEveryPerson(head, body string, people []string) error 
 	}
 	return nil
 }
+
+
