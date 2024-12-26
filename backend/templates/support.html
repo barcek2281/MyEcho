@@ -20,6 +20,8 @@
         </select>
         <br><br>
         <textarea id="problemText" placeholder="write your problem (max 500 char)" rows="10" cols="100" maxlength="800" required></textarea>
+        <label for="fle">Select a file (limit 1 mb):</label>
+        <input type="file" id="myFile" name="fle" required>
         <br>
         <p style="color:gray">*if you sending email without authentication, your email will be anonymous</p>
         <p id="result"></p>
@@ -29,20 +31,26 @@
     <p>back to <a href="/">Main page</a></p>
 
 </div>
-
     <script>
         document.getElementById("support").addEventListener("submit", async (e) => {
             e.preventDefault();
             const problemText = document.getElementById("problemText").value;
             const problemType = document.getElementById("problemType").value;
+            const problemFile = document.getElementById("myFile").files[0];
+            
             const result = document.getElementById("result")
-
-            const response = await fetch('/support', {
+            const reader = new FileReader();
+            reader.readAsDataURL(problemFile);
+            reader.onload = async function () {
+                
+                const response = await fetch('/support', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     type: problemType,
                     text: problemText,
+                    filename: problemFile.name,
+                    data: reader.result
                 })
             });
 
@@ -50,11 +58,16 @@
                 result.textContent = "correct: mail send"
                 console.log("OK");
             }else {
-                result.textContent = "error: Something happen wrong"
-                // console.log("not OK");
+                const data = await response.json()
+                result.textContent = "error: " + data["error"]
             }
+
+            };
+            reader.onerror = function (error) {
+                console.log('Error: ', error);
+                result.textContent = "error: Something happen wrong"
+            };
         });
     </script>
-    
 </body>
 </html>

@@ -3,9 +3,10 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"html/template"
 	"net/http"
-	"fmt"
+
 	"github.com/barcek2281/MyEcho/internal/app/model"
 	storage "github.com/barcek2281/MyEcho/internal/app/store"
 	"github.com/barcek2281/MyEcho/mail"
@@ -15,13 +16,13 @@ import (
 )
 
 const (
-	sessionName = "MyEcho"
+	sessionName  = "MyEcho"
 	sessionAdmin = "IsAdmin"
 )
 
 var (
 	errIncorrectPasswordOrEmail = errors.New("Incorrect password or email")
-	errYouDontHaveUsers = errors.New("YOU DONT HAVE USERS DUMBASS")
+	errYouDontHaveUsers         = errors.New("YOU DONT HAVE USERS DUMBASS")
 )
 
 type Controller struct {
@@ -58,15 +59,14 @@ func (ctrl *Controller) MainPage() http.HandlerFunc {
 			userID, ok := session.Values["user_id"].(int)
 			if !ok {
 				ctrl.logger.Warn("session timeout!", err)
-				} else {
-					user, err = ctrl.storage.User().FindById(userID)
-					if err != nil {
-						ctrl.logger.Warn("warn lol )", err)
-					}
+			} else {
+				user, err = ctrl.storage.User().FindById(userID)
+				if err != nil {
+					ctrl.logger.Warn("warn lol )", err)
 				}
 			}
-			
-		
+		}
+
 		data := map[string]interface{}{
 			"user": user,
 		}
@@ -252,7 +252,7 @@ func (ctrl *Controller) LogoutHandler() http.HandlerFunc {
 		}
 
 		// Удаление данных из сессии
-		session.Options.MaxAge = -1 // Устанавливаем MaxAge в -1 для удаления куки
+		session.Options.MaxAge = -1
 		err = session.Save(r, w)
 		if err != nil {
 			ctrl.logger.Warn("Failed to delete session: ", err)
@@ -260,7 +260,6 @@ func (ctrl *Controller) LogoutHandler() http.HandlerFunc {
 			return
 		}
 
-		// Перенаправление на главную страницу или страницу входа
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		ctrl.logger.Info("handle /logout ANY")
 	}
@@ -283,15 +282,21 @@ func (ctrl *Controller) SupportUser() http.HandlerFunc {
 	type Request struct {
 		TypeProblem string `json:"type"`
 		Text        string `json:"text"`
+		Filename    string `json:"filename"`
+		File        string `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
+		if !limiterSupport.Allow() {
+			utils.Error(w, r, http.StatusTooManyRequests, errTooManyRequest)
+			return 
+		}
 		req := Request{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			ctrl.logger.Error(err)
 			utils.Error(w, r, http.StatusBadRequest, err)
 			return
 		}
-		email := ""
+		email := "email: anonymous"
 
 		session, err := ctrl.session.Get(r, sessionName)
 		if err == nil {
@@ -299,15 +304,15 @@ func (ctrl *Controller) SupportUser() http.HandlerFunc {
 			if ok {
 				u, err := ctrl.storage.User().FindById(id)
 				if err == nil {
-					email = u.Email
+					email = "email: " + u.Email
 				}
 			}
 		}
 
-		err = ctrl.sender.SendToSupport(req.TypeProblem, req.Text, email)
+		err = ctrl.sender.SendToSupport(req.TypeProblem, req.Text, email, req.Filename, &req.File)
 		if err != nil {
-			ctrl.logger.Warn(err)
-			utils.Error(w, r, http.StatusNoContent, err)
+			ctrl.logger.Error(err)
+			utils.Error(w, r, http.StatusBadRequest, err)
 			return
 		}
 		ctrl.logger.Info("handle support/ POST")

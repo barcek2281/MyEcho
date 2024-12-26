@@ -52,6 +52,7 @@ h5 {
     background-color: #ff5e8e;
 }
 
+
 /* Контейнер для фильтров и сортировки */
 .filters-sort-container {
     display: flex;
@@ -79,7 +80,7 @@ select {
     border: none;
     border-radius: 8px;
     font-size: 1rem;
-    color: #1e1e2f;
+    color: #414192;
     flex: 1;
 }
 
