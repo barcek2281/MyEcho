@@ -1,0 +1,6 @@
+bin_addr = ":8080"
+log_level = "debug"
+database_url = "host=localhost user=postgres password=O_o dbname=restapi_dev sslmode=disable"
+cookie_key = "secret"
+email = "sabdpp17@gmail.com"
+email_password = "ssshh nobody know"

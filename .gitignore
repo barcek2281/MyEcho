@@ -27,5 +27,4 @@ go.work.sum
 .env
 .idea
 .vscode
-*.toml
 apiserver.toml
