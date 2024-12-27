@@ -27,13 +27,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	env := apiserver.NewEnv()
-	_, err = toml.DecodeFile(configPath, env)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	env.LogFilePath = logPath
 
 	fmt.Println("http://localhost" + config.BinAddr)
 
