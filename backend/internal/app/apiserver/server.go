@@ -6,7 +6,7 @@ import (
 	"github.com/barcek2281/MyEcho/internal/app/controller"
 	storage "github.com/barcek2281/MyEcho/internal/app/store"
 	"github.com/barcek2281/MyEcho/internal/app/mail"
-	"github.com/barcek2281/MyEcho/middleware"
+	"github.com/barcek2281/MyEcho/internal/app/middleware"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
