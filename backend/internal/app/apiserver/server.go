@@ -31,7 +31,6 @@ const (
 	ctxKeyUser  ctxKey = iota
 )
 
-
 func newServer(store *storage.Storage, session sessions.Store, logger *logrus.Logger, sender *mail.Sender) *server {
 	s := &server{
 		router:         mux.NewRouter(),
@@ -70,7 +69,6 @@ func (s *server) ConfigureRouter() {
 
 	s.router.HandleFunc("/logout", s.controller.LogoutHandler())
 
-	
 	admin := s.router.PathPrefix("/admin").Subrouter()
 	admin.PathPrefix("/static/").Handler(http.StripPrefix("/admin/static/", fs))
 	admin.Use(s.middleware.AuthenicateAdmin)
@@ -81,7 +79,7 @@ func (s *server) ConfigureRouter() {
 	admin.HandleFunc("/updateUserLogin", s.controllerUser.UpdateUser()).Methods("POST")
 	admin.HandleFunc("/deleteUser", s.controllerUser.DeleteUser()).Methods("POST")
 	admin.HandleFunc("/findUser", s.controllerUser.FindUser()).Methods("POST")
-	admin.HandleFunc("/sendMessage", s.controllerUser.SendMessage()).Methods("POST")
+	admin.HandleFunc("/sendMessage", s.controllerUser.SendMessageAdmin()).Methods("POST")
 	// Лучше его так оставить
 	s.router.HandleFunc("/getPost", s.controllerPost.GetPost()).Methods("GET")
 

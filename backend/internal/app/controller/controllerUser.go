@@ -100,9 +100,7 @@ func (ctrl *ControllerUser) DeleteUser() http.HandlerFunc {
 		err := ctrl.storage.User().DeleteByEmail(req.Email)
 		if err != nil {
 			utils.Error(w, r, http.StatusBadRequest, err)
-
 			ctrl.logger.Error(err)
-
 			return
 		}
 
@@ -142,7 +140,7 @@ func (ctrl *ControllerUser) FindUser() http.HandlerFunc {
 	}
 }
 
-func (ctrl *ControllerUser) SendMessage() http.HandlerFunc {
+func (ctrl *ControllerUser) SendMessageAdmin() http.HandlerFunc {
 	type Request struct {
 		Msg string `json:"msg"`
 	}
@@ -154,24 +152,27 @@ func (ctrl *ControllerUser) SendMessage() http.HandlerFunc {
 		}
 		users, err := ctrl.storage.User().GetAllWithoutLimit()
 		if err != nil {
-			
 			utils.Error(w, r, http.StatusInternalServerError, err)
 			return
 		}
+
 		people := make([]string, 0)
 		for _, user := range users {
 			people = append(people, user.Email)
 		}
-		if len(people) <= 0{
+
+		if len(people) <= 0 {
 			utils.Error(w, r, 503, errYouDontHaveUsers)
 			return
 		}
+
 		err = ctrl.sender.SendToEveryPerson("hello, dear users", req.Msg, people)
 		if err != nil {
 			fmt.Println(err)
 			utils.Error(w, r, http.StatusInternalServerError, err)
 			return
 		}
+
 		utils.Response(w, r, 202, nil)
 		ctrl.logger.Info("Handle /admin/sendMessage POST")
 	}
@@ -203,11 +204,13 @@ func (ctrl *ControllerUser) AdminLogin() http.HandlerFunc {
 			utils.Error(w, r, 404, err)
 			return
 		}
+
 		a, err := ctrl.storage.Admin().FindByEmail(req.Email)
 		if err != nil || !a.ComparePassword(req.Password) {
 			utils.Error(w, r, 404, errIncorrectPasswordOrEmail)
 			return
 		}
+
 		session, err := ctrl.session.Get(r, sessionAdmin)
 		session.Values["admin_id"] = a.ID
 		ctrl.session.Save(r, w, session)
@@ -228,6 +231,7 @@ func (ctrl *ControllerUser) AdminRegister() http.HandlerFunc {
 			utils.Error(w, r, http.StatusBadRequest, err)
 			return
 		}
+
 		a := &model.Admin{
 			Email:    req.Email,
 			Name:     req.Name,
