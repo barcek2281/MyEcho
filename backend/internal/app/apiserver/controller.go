@@ -155,22 +155,24 @@ func (ctrl *Controller) registerUser(s *server) http.HandlerFunc {
 			Password: req.Password,
 			Login:    req.Login,
 		}
-
+		
+		session, err := s.Session.Get(r, sessionName)
+		if err != nil {
+			fmt.Println("awd")
+			s.Error(w, r, 404, err)
+			s.Logger.Warn(err)
+			return
+		}
 		if err := s.storage.User().Create(&u); err != nil {
 			s.Error(w, r, http.StatusBadRequest, err)
 			s.Logger.Warn(err)
 			return
 		}
 
-		session, err := s.Session.Get(r, sessionName)
-		if err != nil {
-			s.Error(w, r, 404, err)
-			s.Logger.Warn(err)
-			return
-		}
 
 		session.Values["user_id"] = u.ID
 		if err := s.Session.Save(r, w, session); err != nil {
+			
 			s.Error(w, r, 404, err)
 			return
 		}
