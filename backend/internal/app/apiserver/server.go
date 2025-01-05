@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/barcek2281/MyEcho/internal/app/controller"
-	storage "github.com/barcek2281/MyEcho/internal/app/store"
 	"github.com/barcek2281/MyEcho/internal/app/mail"
 	"github.com/barcek2281/MyEcho/internal/app/middleware"
+	storage "github.com/barcek2281/MyEcho/internal/app/store"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
@@ -19,7 +19,7 @@ type server struct {
 	Session        sessions.Store
 	controller     *controller.Controller
 	controllerPost *controller.ControllerPost
-	controllerUser *controller.ControllerUser
+	controllerAdmin *controller.ControllerAdmin
 	middleware     *middleware.Middleware
 	Env            Env
 }
@@ -39,7 +39,7 @@ func newServer(store *storage.Storage, session sessions.Store, logger *logrus.Lo
 		Session:        session,
 		controller:     controller.NewController(store, session, logger, sender),
 		controllerPost: controller.NewControllerPost(store, session, logger),
-		controllerUser: controller.NewControllerUser(store, session, logger, sender),
+		controllerAdmin: controller.NewControllerUser(store, session, logger, sender),
 		middleware:     middleware.NewMiddleware(session, store),
 	}
 
@@ -62,6 +62,9 @@ func (s *server) ConfigureRouter() {
 	// // Надо будет поменять название функции
 	s.router.HandleFunc("/register", s.controller.RegisterUser()).Methods("POST")
 	s.router.HandleFunc("/register", s.controller.RegisterPage()).Methods("GET")
+	s.router.HandleFunc("/register/verify", s.controller.EmailVerifyPage()).Methods("GET")
+	s.router.HandleFunc("/register/verify", s.controller.EmailVerifyUser()).Methods("POST")
+
 
 	// // я далеко не ушел с названием функций
 	s.router.HandleFunc("/login", s.controller.LoginPage()).Methods("GET")
@@ -72,14 +75,15 @@ func (s *server) ConfigureRouter() {
 	admin := s.router.PathPrefix("/admin").Subrouter()
 	admin.PathPrefix("/static/").Handler(http.StripPrefix("/admin/static/", fs))
 	admin.Use(s.middleware.AuthenicateAdmin)
-	admin.HandleFunc("/", s.controllerUser.AdminLoginPage()).Methods("GET")
-	admin.HandleFunc("/login", s.controllerUser.AdminLogin()).Methods("POST")
-	admin.HandleFunc("/register", s.controllerUser.AdminRegister()).Methods("POST")
-	admin.HandleFunc("/users", s.controllerUser.GetAllUsers()).Methods("GET")
-	admin.HandleFunc("/updateUserLogin", s.controllerUser.UpdateUser()).Methods("POST")
-	admin.HandleFunc("/deleteUser", s.controllerUser.DeleteUser()).Methods("POST")
-	admin.HandleFunc("/findUser", s.controllerUser.FindUser()).Methods("POST")
-	admin.HandleFunc("/sendMessage", s.controllerUser.SendMessageAdmin()).Methods("POST")
+	admin.HandleFunc("/", s.controllerAdmin.AdminLoginPage()).Methods("GET")
+	admin.HandleFunc("/login", s.controllerAdmin.AdminLogin()).Methods("POST")
+	admin.HandleFunc("/register", s.controllerAdmin.AdminRegister()).Methods("POST")
+	admin.HandleFunc("/users", s.controllerAdmin.GetAllUsers()).Methods("GET")
+	admin.HandleFunc("/updateUserLogin", s.controllerAdmin.UpdateUser()).Methods("POST")
+	admin.HandleFunc("/deleteUser", s.controllerAdmin.DeleteUser()).Methods("POST")
+	admin.HandleFunc("/findUser", s.controllerAdmin.FindUser()).Methods("POST")
+	admin.HandleFunc("/sendMessage", s.controllerAdmin.SendMessageAdmin()).Methods("POST")
+	
 	// Лучше его так оставить
 	s.router.HandleFunc("/getPost", s.controllerPost.GetPost()).Methods("GET")
 

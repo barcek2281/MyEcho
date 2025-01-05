@@ -8,11 +8,12 @@ import (
 )
 
 type Storage struct {
-	DatabaseURL    string
-	db             *sql.DB
-	userRepository *UserRepository
-	postRepository *PostRepository
-	adminRepository *AdminRepository
+	DatabaseURL       string
+	db                *sql.DB
+	userRepository    *UserRepository
+	postRepository    *PostRepository
+	adminRepository   *AdminRepository
+	barcodeRepository *BarcodeRepository
 }
 
 // New Config
@@ -64,4 +65,13 @@ func (s *Storage) Admin() *AdminRepository {
 		}
 	}
 	return s.adminRepository
+}
+
+func (s *Storage) UserTemp() *BarcodeRepository {
+	if s.barcodeRepository == nil {
+		s.barcodeRepository = &BarcodeRepository{
+			store: s,
+		}
+	}
+	return s.barcodeRepository
 }

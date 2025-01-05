@@ -186,9 +186,27 @@ func (ctrl *Controller) RegisterUser() http.HandlerFunc {
 			utils.Error(w, r, 404, err)
 			return
 		}
-		utils.Response(w, r, http.StatusCreated, map[string]string{"status": "Succesfully, created user"})
-
+		// utils.Response(w, r, http.StatusCreated, map[string]string{"status": "Succesfully, created user"})
+		http.Redirect(w, r, "/templates/email_verification.html", http.StatusAccepted)
 		ctrl.logger.Info("handle /register POST")
+	}
+}
+
+func (ctrl *Controller) EmailVerifyPage() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		tmp, err := template.ParseFiles("./templates/email_verification.html")
+		if err != nil {
+			ctrl.logger.Warn(err)
+			return
+		}
+		tmp.Execute(w, nil)
+		ctrl.logger.Info("handle /register/verify GET")
+	}
+}
+
+func (ctrl *Controller) EmailVerifyUser() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		
 	}
 }
 
