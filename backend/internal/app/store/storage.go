@@ -67,7 +67,7 @@ func (s *Storage) Admin() *AdminRepository {
 	return s.adminRepository
 }
 
-func (s *Storage) UserTemp() *BarcodeRepository {
+func (s *Storage) Barcode() *BarcodeRepository {
 	if s.barcodeRepository == nil {
 		s.barcodeRepository = &BarcodeRepository{
 			store: s,

@@ -18,6 +18,7 @@ const (
 
 var (
 	errYouCantBeHere = errors.New("You cant be here")
+	errUnregiterUser = errors.New("please verify your email adress")
 )
 
 type Middleware struct {
@@ -48,6 +49,16 @@ func (m *Middleware) AuthenicateUser(next http.Handler) http.Handler {
 
 		if err != nil {
 			utils.Error(w, r, http.StatusBadGateway, errYouCantBeHere)
+			return
+		}
+
+		role, ok := sessions.Values["role"]
+		if !ok {
+			utils.Error(w, r, http.StatusBadGateway, errYouCantBeHere)
+			return
+		}
+		if role == "unauthorized" {
+			utils.Error(w, r, http.StatusBadGateway, errUnregiterUser)
 			return
 		}
 

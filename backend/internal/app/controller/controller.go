@@ -5,19 +5,24 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"math/rand"
 	"net/http"
+	"strconv"
 
+	"github.com/barcek2281/MyEcho/internal/app/mail"
 	"github.com/barcek2281/MyEcho/internal/app/model"
 	storage "github.com/barcek2281/MyEcho/internal/app/store"
-	"github.com/barcek2281/MyEcho/internal/app/mail"
 	"github.com/barcek2281/MyEcho/pkg/utils"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
 )
 
 const (
-	sessionName  = "MyEcho"
-	sessionAdmin = "IsAdmin"
+	sessionName      = "MyEcho"
+	sessionAdmin     = "IsAdmin"
+	roleUser         = "user"
+	roleUnauthorized = "unauthorized"
+	roleAdmin        = "admin"
 )
 
 var (
@@ -182,12 +187,27 @@ func (ctrl *Controller) RegisterUser() http.HandlerFunc {
 		}
 
 		session.Values["user_id"] = u.ID
+		session.Values["role"] = roleUnauthorized
+
 		if err := ctrl.session.Save(r, w, session); err != nil {
 			utils.Error(w, r, 404, err)
 			return
 		}
-		// utils.Response(w, r, http.StatusCreated, map[string]string{"status": "Succesfully, created user"})
-		http.Redirect(w, r, "/templates/email_verification.html", http.StatusAccepted)
+
+		randomInt := rand.Intn(10000)
+		bar := model.Barcode{
+			User_id: u.ID,
+			Barcode: randomInt,
+		}
+		if err := ctrl.storage.Barcode().Create(&bar); err != nil {
+			ctrl.logger.Warn(err)
+			utils.Error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		ctrl.sender.SendToPerson("Your code", "your code: "+strconv.Itoa(randomInt), []string{u.Email})
+		utils.Response(w, r, http.StatusCreated, map[string]string{"status": "Succesfully, created user"})
+		
 		ctrl.logger.Info("handle /register POST")
 	}
 }
@@ -205,8 +225,37 @@ func (ctrl *Controller) EmailVerifyPage() http.HandlerFunc {
 }
 
 func (ctrl *Controller) EmailVerifyUser() http.HandlerFunc {
+	type Request struct {
+		Barcode int `json:"barcode"`
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		
+		req := Request{}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			ctrl.logger.Info(err)
+			utils.Error(w, r, http.StatusBadGateway, err)
+			return
+		}
+		session, err := ctrl.session.Get(r, SessionName)
+		if err != nil {
+			ctrl.logger.Info(err)
+			utils.Error(w, r, http.StatusBadGateway, err)
+			return
+		}
+
+		user_id := session.Values["user_id"].(int)
+		barcode, err := ctrl.storage.Barcode().FindByUserId(user_id)
+		if barcode.Barcode != req.Barcode {
+			ctrl.logger.Info(err)
+			utils.Error(w, r, http.StatusBadGateway, errIncorrectPasswordOrEmail)
+			return
+		}
+		session.Values["role"] = roleUser
+		if err := ctrl.session.Save(r, w, session); err != nil {
+			utils.Error(w, r, 404, err)
+			return
+		}
+		utils.Response(w, r, 200, nil)
+		ctrl.logger.Info("handle /register/verify POST")
 	}
 }
 
@@ -252,6 +301,7 @@ func (ctrl *Controller) LoginUser() http.HandlerFunc {
 			return
 		}
 		session.Values["user_id"] = u.ID
+		session.Values["role"] = roleUser
 		ctrl.session.Save(r, w, session)
 
 		ctrl.logger.Info("handle /login POST")
@@ -306,7 +356,7 @@ func (ctrl *Controller) SupportUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !limiterSupport.Allow() {
 			utils.Error(w, r, http.StatusTooManyRequests, errTooManyRequest)
-			return 
+			return
 		}
 		req := Request{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

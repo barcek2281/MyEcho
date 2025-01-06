@@ -67,6 +67,19 @@ func (send *Sender) SendToEveryPerson(head, body string, people []string) error 
 	return nil
 }
 
+func (send *Sender) SendToPerson(head, body string, person []string) error {
+	auth := smtp.PlainAuth("hitler", send.emailTo, send.emailToPassword, "smtp.gmail.com")
+	msg := "Subject: " + head +
+		"\r\n\n" +
+		body + "\r\n"
+	err := smtp.SendMail("smtp.gmail.com:587", auth, "", person, []byte(msg))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+
 func (send *Sender) sizeOfBase64(s *string) int {
 	return 4 * (len(*s) / 3)
 }
