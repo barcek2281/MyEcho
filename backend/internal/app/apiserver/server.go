@@ -13,15 +13,15 @@ import (
 )
 
 type server struct {
-	router         *mux.Router
-	Logger         *logrus.Logger
-	storage        *storage.Storage
-	Session        sessions.Store
-	controller     *controller.Controller
-	controllerPost *controller.ControllerPost
+	router          *mux.Router
+	Logger          *logrus.Logger
+	storage         *storage.Storage
+	Session         sessions.Store
+	controller      *controller.Controller
+	controllerPost  *controller.ControllerPost
 	controllerAdmin *controller.ControllerAdmin
-	middleware     *middleware.Middleware
-	Env            Env
+	middleware      *middleware.Middleware
+	Env             Env
 }
 
 type ctxKey int8
@@ -33,14 +33,14 @@ const (
 
 func newServer(store *storage.Storage, session sessions.Store, logger *logrus.Logger, sender *mail.Sender) *server {
 	s := &server{
-		router:         mux.NewRouter(),
-		Logger:         logger,
-		storage:        store,
-		Session:        session,
-		controller:     controller.NewController(store, session, logger, sender),
-		controllerPost: controller.NewControllerPost(store, session, logger),
+		router:          mux.NewRouter(),
+		Logger:          logger,
+		storage:         store,
+		Session:         session,
+		controller:      controller.NewController(store, session, logger, sender),
+		controllerPost:  controller.NewControllerPost(store, session, logger),
 		controllerAdmin: controller.NewControllerUser(store, session, logger, sender),
-		middleware:     middleware.NewMiddleware(session, store),
+		middleware:      middleware.NewMiddleware(session, store),
 	}
 
 	s.ConfigureRouter()
@@ -65,7 +65,6 @@ func (s *server) ConfigureRouter() {
 	s.router.HandleFunc("/register/verify", s.controller.EmailVerifyPage()).Methods("GET")
 	s.router.HandleFunc("/register/verify", s.controller.EmailVerifyUser()).Methods("POST")
 
-
 	// // я далеко не ушел с названием функций
 	s.router.HandleFunc("/login", s.controller.LoginPage()).Methods("GET")
 	s.router.HandleFunc("/login", s.controller.LoginUser()).Methods("POST")
@@ -83,13 +82,13 @@ func (s *server) ConfigureRouter() {
 	admin.HandleFunc("/deleteUser", s.controllerAdmin.DeleteUser()).Methods("POST")
 	admin.HandleFunc("/findUser", s.controllerAdmin.FindUser()).Methods("POST")
 	admin.HandleFunc("/sendMessage", s.controllerAdmin.SendMessageAdmin()).Methods("POST")
-	
+
 	// Лучше его так оставить
 	s.router.HandleFunc("/getPost", s.controllerPost.GetPost()).Methods("GET")
 
 	postUrl := s.router.PathPrefix("/post").Subrouter()
 	postUrl.Use(s.middleware.AuthenicateUser)
-	postUrl.HandleFunc("/createPost", s.controllerPost.CreatePost()).Methods("GET")
+	postUrl.HandleFunc("/createPost", s.controllerPost.CreatePostPage()).Methods("GET")
 	postUrl.HandleFunc("/createPost", s.controllerPost.CreatePostReal()).Methods("POST")
 
 }

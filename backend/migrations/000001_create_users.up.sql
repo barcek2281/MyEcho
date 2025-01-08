@@ -16,7 +16,7 @@ CREATE TABLE barcode (
 CREATE TABLE posts (
     id BIGSERIAL NOT NULL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    like_count INT NOT NULL,
+    like_count INT,
     content VARCHAR(300) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );

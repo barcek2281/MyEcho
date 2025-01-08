@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	storage "github.com/barcek2281/MyEcho/internal/app/store"
@@ -11,9 +12,9 @@ import (
 )
 
 const (
-	sessionName = "MyEcho"
+	sessionName  = "MyEcho"
 	sessionAdmin = "IsAdmin"
-	ctxKeyUser  = 1
+	ctxKeyUser   = 1
 )
 
 var (
@@ -35,7 +36,7 @@ func NewMiddleware(session sessions.Store, storage *storage.Storage) *Middleware
 func (m *Middleware) AuthenicateUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sessions, err := m.session.Get(r, sessionName)
-		
+
 		if err != nil {
 			utils.Error(w, r, http.StatusBadGateway, errYouCantBeHere)
 			return
@@ -81,12 +82,14 @@ func (m *Middleware) AuthenicateAdmin(next http.Handler) http.Handler {
 		session, err := m.session.Get(r, sessionAdmin)
 		id, ok := session.Values["admin_id"]
 		if !ok {
+			fmt.Println("awd")
 			utils.Error(w, r, http.StatusBadGateway, errYouCantBeHere)
 			return
 		}
 		a, err := m.storage.Admin().FindById(id.(int))
 
 		if err != nil {
+			fmt.Println("awd12")
 			utils.Error(w, r, http.StatusBadGateway, errYouCantBeHere)
 			return
 		}

@@ -187,7 +187,7 @@ func (ctrl *Controller) RegisterUser() http.HandlerFunc {
 		}
 
 		session.Values["user_id"] = u.ID
-		session.Values["role"] = roleUnauthorized
+		// session.Values["role"] = roleUnauthorized
 
 		if err := ctrl.session.Save(r, w, session); err != nil {
 			utils.Error(w, r, 404, err)
@@ -205,9 +205,8 @@ func (ctrl *Controller) RegisterUser() http.HandlerFunc {
 			return
 		}
 
-		ctrl.sender.SendToPerson("Your code", "your code: "+strconv.Itoa(randomInt), []string{u.Email})
+		go ctrl.sender.SendToPerson("Your code", "your code: "+strconv.Itoa(randomInt), []string{u.Email})
 		utils.Response(w, r, http.StatusCreated, map[string]string{"status": "Succesfully, created user"})
-		
 		ctrl.logger.Info("handle /register POST")
 	}
 }
@@ -231,13 +230,14 @@ func (ctrl *Controller) EmailVerifyUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := Request{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			ctrl.logger.Info(err)
+			ctrl.logger.Warn(err)
 			utils.Error(w, r, http.StatusBadGateway, err)
 			return
 		}
 		session, err := ctrl.session.Get(r, SessionName)
+
 		if err != nil {
-			ctrl.logger.Info(err)
+			ctrl.logger.Warn(err)
 			utils.Error(w, r, http.StatusBadGateway, err)
 			return
 		}
@@ -245,12 +245,13 @@ func (ctrl *Controller) EmailVerifyUser() http.HandlerFunc {
 		user_id := session.Values["user_id"].(int)
 		barcode, err := ctrl.storage.Barcode().FindByUserId(user_id)
 		if barcode.Barcode != req.Barcode {
-			ctrl.logger.Info(err)
+			ctrl.logger.Warn(err)
 			utils.Error(w, r, http.StatusBadGateway, errIncorrectPasswordOrEmail)
 			return
 		}
 		session.Values["role"] = roleUser
 		if err := ctrl.session.Save(r, w, session); err != nil {
+			ctrl.logger.Warn(err)
 			utils.Error(w, r, 404, err)
 			return
 		}
@@ -295,17 +296,22 @@ func (ctrl *Controller) LoginUser() http.HandlerFunc {
 			utils.Error(w, r, 404, errIncorrectPasswordOrEmail)
 			return
 		}
-		session, err := ctrl.session.Get(r, sessionName)
+
+		session, err := ctrl.session.New(r, sessionName)
 		if err != nil {
 			utils.Error(w, r, 404, err)
 			return
 		}
 		session.Values["user_id"] = u.ID
 		session.Values["role"] = roleUser
-		ctrl.session.Save(r, w, session)
+		err = ctrl.session.Save(r, w, session)
+
+		w.Header().Set("Access-Control-Allow-Origin", "http://example.com") // Замени на домен клиента
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 		ctrl.logger.Info("handle /login POST")
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		//http.Redirect(w, r, "/", http.StatusSeeOther)
+		utils.Response(w, r, 201, nil)
 	}
 }
 
