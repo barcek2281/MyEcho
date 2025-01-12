@@ -90,7 +90,6 @@ func (s *server) ConfigureRouter() {
 	postUrl.Use(s.middleware.AuthenicateUser)
 	postUrl.HandleFunc("/createPost", s.controllerPost.CreatePostPage()).Methods("GET")
 	postUrl.HandleFunc("/createPost", s.controllerPost.CreatePostReal()).Methods("POST")
-
 }
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

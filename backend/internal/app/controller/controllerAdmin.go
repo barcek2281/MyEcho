@@ -34,7 +34,6 @@ func NewControllerUser(storage *storage.Storage, session sessions.Store, logger 
 func (ctrl *ControllerAdmin) GetAllUsers() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		all, err := ctrl.storage.User().GetAll(20)
-
 		if err != nil {
 			utils.Error(w, r, http.StatusNotFound, err)
 			ctrl.logger.Error(err)
@@ -52,7 +51,6 @@ func (ctrl *ControllerAdmin) GetAllUsers() http.HandlerFunc {
 			return
 		}
 		ctrl.logger.Info("handle /getAllUsers GET")
-
 	}
 }
 
@@ -136,7 +134,6 @@ func (ctrl *ControllerAdmin) FindUser() http.HandlerFunc {
 			"login": u.Login,
 		})
 		ctrl.logger.Info("handle /findUser POST")
-
 	}
 }
 

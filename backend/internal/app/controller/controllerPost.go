@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-
 	"text/template"
 
 	"golang.org/x/time/rate"
@@ -119,9 +118,7 @@ func (ctrl *ControllerPost) CreatePostReal() http.HandlerFunc {
 }
 
 func (ctrl *ControllerPost) GetPost() http.HandlerFunc {
-
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		login := r.URL.Query().Get("author")
 		sortDate := r.URL.Query().Get("sort")
 		if sortDate != "ASC" && sortDate != "DESC" {
@@ -151,5 +148,4 @@ func (ctrl *ControllerPost) GetPost() http.HandlerFunc {
 		})
 		ctrl.logger.Info("handle /getPost ", r.URL)
 	}
-
 }

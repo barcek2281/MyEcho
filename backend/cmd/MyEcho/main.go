@@ -18,6 +18,7 @@ func init() {
 	flag.StringVar(&configPath, "config-path", "configs/apiserver.toml", "config path")
 	flag.StringVar(&logPath, "log-path", "log/info.log", "log path")
 }
+
 func main() {
 	flag.Parse()
 
@@ -27,8 +28,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-
-	fmt.Println("http://localhost" + config.BinAddr)
+	fmt.Println("http://" + config.BinAddr)
 
 	if err := apiserver.Start(config); err != nil {
 		log.Fatal(err)

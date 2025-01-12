@@ -5,4 +5,3 @@ type Barcode struct {
 	User_id int
 	Barcode int
 }
-

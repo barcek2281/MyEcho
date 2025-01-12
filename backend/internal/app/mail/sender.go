@@ -14,9 +14,7 @@ type Sender struct {
 	emailToPassword string
 }
 
-var (
-	errLargeFile = errors.New("file too large XD")
-)
+var errLargeFile = errors.New("file too large XD")
 
 func NewSender(emailFrom, emailPassword string) *Sender {
 	return &Sender{
@@ -26,7 +24,7 @@ func NewSender(emailFrom, emailPassword string) *Sender {
 }
 
 func (send *Sender) SendToSupport(subject, body, who, filename string, data *string) error {
-	if send.sizeOfBase64(data) > 1*1024*1024*1024{
+	if send.sizeOfBase64(data) > 1*1024*1024*1024 {
 		return errLargeFile
 	}
 
@@ -78,7 +76,6 @@ func (send *Sender) SendToPerson(head, body string, person []string) error {
 	}
 	return nil
 }
-
 
 func (send *Sender) sizeOfBase64(s *string) int {
 	return 4 * (len(*s) / 3)

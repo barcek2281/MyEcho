@@ -18,7 +18,6 @@ func Response(w http.ResponseWriter, r *http.Request, code int, data interface{}
 }
 
 func FindSymbol(s *string, symbol rune) int {
-
 	for i, c := range *s {
 		if c == symbol {
 			return i

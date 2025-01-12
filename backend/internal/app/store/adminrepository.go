@@ -23,8 +23,8 @@ func (r *AdminRepository) FindById(id int) (*model.Admin, error) {
 	a := &model.Admin{}
 	if err := r.storage.db.QueryRow("SELECT id, email, name, password FROM admins WHERE id = $1", id).Scan(
 		&a.ID, &a.Email, &a.Name, &a.Password); err != nil {
-			return nil, err
-		}
+		return nil, err
+	}
 	return a, nil
 }
 
@@ -36,4 +36,3 @@ func (r *AdminRepository) FindByEmail(email string) (*model.Admin, error) {
 	}
 	return a, nil
 }
-

@@ -1,8 +1,6 @@
 package storage
 
 import (
-	
-
 	"github.com/barcek2281/MyEcho/internal/app/model"
 )
 
@@ -47,19 +45,18 @@ func (p *PostRepository) GetAllWithAuthors(login, sortDate string, limit, offset
 
 	// имя пользователя
 	if login != "" {
-		query += "WHERE users.login = " + "'" + login + "'" 
+		query += "WHERE users.login = " + "'" + login + "'"
 	}
 
 	// сортировка по времени
 	query += " ORDER BY posts.created_at "
 	if sortDate != "" {
 		query += sortDate
-	}else {
+	} else {
 		query += "DESC"
 	}
 
-	rows, err := p.storage.db.Query(query + " LIMIT $1 OFFSET $2", limit, offset)
-	
+	rows, err := p.storage.db.Query(query+" LIMIT $1 OFFSET $2", limit, offset)
 	if err != nil {
 		return nil, err
 	}

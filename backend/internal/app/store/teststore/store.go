@@ -1,7 +1,6 @@
 package teststore
 
-type Store struct {
-}
+type Store struct{}
 
 func NewStore() *Store {
 	return &Store{}

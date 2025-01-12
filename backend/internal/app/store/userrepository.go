@@ -7,9 +7,7 @@ import (
 	"github.com/barcek2281/MyEcho/internal/app/model"
 )
 
-var (
-	errEmailIsUsed = errors.New("email: email is used")
-)
+var errEmailIsUsed = errors.New("email: email is used")
 
 // UserRepository
 type UserRepository struct {
@@ -43,10 +41,10 @@ func (r *UserRepository) FindByEmail(email string) (*model.User, error) {
 	return u, nil
 }
 
-func (r* UserRepository) FindById(id int) (*model.User, error) {
+func (r *UserRepository) FindById(id int) (*model.User, error) {
 	u := &model.User{}
 	if err := r.storage.db.QueryRow("SELECT id, email, login, password FROM users WHERE id = $1", id).Scan(&u.ID,
-	&u.Email, &u.Login, &u.Password); err != nil {
+		&u.Email, &u.Login, &u.Password); err != nil {
 		return nil, err
 	}
 	return u, nil
@@ -74,7 +72,6 @@ func (r *UserRepository) ChangeLoginByEmail(newLogin, email string) error {
 }
 
 func (r *UserRepository) DeleteByEmail(email string) error {
-
 	result, err := r.storage.db.Exec("DELETE FROM users WHERE email = $1", email)
 	if err != nil {
 		// Возвращаем ошибку, если запрос не удался
@@ -92,7 +89,6 @@ func (r *UserRepository) DeleteByEmail(email string) error {
 	}
 
 	return nil
-
 }
 
 func (r *UserRepository) GetAll(limit int) ([]*model.User, error) {
@@ -114,7 +110,6 @@ func (r *UserRepository) GetAll(limit int) ([]*model.User, error) {
 	}
 	return users, nil
 }
-
 
 func (r *UserRepository) GetAllWithoutLimit() ([]*model.User, error) {
 	rows, err := r.storage.db.Query("SELECT id, email, login, password FROM users ORDER BY id")

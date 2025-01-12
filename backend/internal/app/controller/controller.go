@@ -47,7 +47,6 @@ func NewController(storage *storage.Storage, session sessions.Store, logger *log
 }
 
 func (ctrl *Controller) MainPage() http.HandlerFunc {
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		tmpl, err := template.ParseFiles("./templates/index.html")
 		if err != nil {
@@ -88,7 +87,6 @@ func (ctrl *Controller) MainPage() http.HandlerFunc {
 
 func (ctrl *Controller) HandleHello() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		response := map[string]string{
 			"status":  "OK",
 			"message": "Hello World!",
@@ -108,7 +106,6 @@ func (ctrl *Controller) HandleHello() http.HandlerFunc {
 			ctrl.logger.Error(err)
 			http.Error(w, "cannot write json file", http.StatusInternalServerError)
 		}
-
 	}
 }
 
@@ -235,7 +232,6 @@ func (ctrl *Controller) EmailVerifyUser() http.HandlerFunc {
 			return
 		}
 		session, err := ctrl.session.Get(r, SessionName)
-
 		if err != nil {
 			ctrl.logger.Warn(err)
 			utils.Error(w, r, http.StatusBadGateway, err)
@@ -310,7 +306,7 @@ func (ctrl *Controller) LoginUser() http.HandlerFunc {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 		ctrl.logger.Info("handle /login POST")
-		//http.Redirect(w, r, "/", http.StatusSeeOther)
+		// http.Redirect(w, r, "/", http.StatusSeeOther)
 		utils.Response(w, r, 201, nil)
 	}
 }

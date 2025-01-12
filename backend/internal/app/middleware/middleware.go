@@ -33,10 +33,10 @@ func NewMiddleware(session sessions.Store, storage *storage.Storage) *Middleware
 		storage: storage,
 	}
 }
+
 func (m *Middleware) AuthenicateUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sessions, err := m.session.Get(r, sessionName)
-
 		if err != nil {
 			utils.Error(w, r, http.StatusBadGateway, errYouCantBeHere)
 			return
@@ -47,7 +47,6 @@ func (m *Middleware) AuthenicateUser(next http.Handler) http.Handler {
 			return
 		}
 		u, err := m.storage.User().FindById(id.(int))
-
 		if err != nil {
 			utils.Error(w, r, http.StatusBadGateway, errYouCantBeHere)
 			return
@@ -87,7 +86,6 @@ func (m *Middleware) AuthenicateAdmin(next http.Handler) http.Handler {
 			return
 		}
 		a, err := m.storage.Admin().FindById(id.(int))
-
 		if err != nil {
 			fmt.Println("awd12")
 			utils.Error(w, r, http.StatusBadGateway, errYouCantBeHere)
@@ -95,6 +93,5 @@ func (m *Middleware) AuthenicateAdmin(next http.Handler) http.Handler {
 		}
 
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), 1, a)))
-
 	})
 }
