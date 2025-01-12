@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	storage "github.com/barcek2281/MyEcho/internal/app/store"
@@ -11,13 +12,14 @@ import (
 )
 
 const (
-	sessionName = "MyEcho"
+	sessionName  = "MyEcho"
 	sessionAdmin = "IsAdmin"
-	ctxKeyUser  = 1
+	ctxKeyUser   = 1
 )
 
 var (
 	errYouCantBeHere = errors.New("You cant be here")
+	errUnregiterUser = errors.New("please verify your email adress")
 )
 
 type Middleware struct {
@@ -31,10 +33,10 @@ func NewMiddleware(session sessions.Store, storage *storage.Storage) *Middleware
 		storage: storage,
 	}
 }
+
 func (m *Middleware) AuthenicateUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sessions, err := m.session.Get(r, sessionName)
-		
 		if err != nil {
 			utils.Error(w, r, http.StatusBadGateway, errYouCantBeHere)
 			return
@@ -45,9 +47,18 @@ func (m *Middleware) AuthenicateUser(next http.Handler) http.Handler {
 			return
 		}
 		u, err := m.storage.User().FindById(id.(int))
-
 		if err != nil {
 			utils.Error(w, r, http.StatusBadGateway, errYouCantBeHere)
+			return
+		}
+
+		role, ok := sessions.Values["role"]
+		if !ok {
+			utils.Error(w, r, http.StatusBadGateway, errYouCantBeHere)
+			return
+		}
+		if role == "unauthorized" {
+			utils.Error(w, r, http.StatusBadGateway, errUnregiterUser)
 			return
 		}
 
@@ -70,17 +81,17 @@ func (m *Middleware) AuthenicateAdmin(next http.Handler) http.Handler {
 		session, err := m.session.Get(r, sessionAdmin)
 		id, ok := session.Values["admin_id"]
 		if !ok {
+			fmt.Println("awd")
 			utils.Error(w, r, http.StatusBadGateway, errYouCantBeHere)
 			return
 		}
 		a, err := m.storage.Admin().FindById(id.(int))
-
 		if err != nil {
+			fmt.Println("awd12")
 			utils.Error(w, r, http.StatusBadGateway, errYouCantBeHere)
 			return
 		}
 
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), 1, a)))
-
 	})
 }

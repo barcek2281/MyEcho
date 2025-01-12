@@ -4,7 +4,7 @@ type Env struct {
 	EmailTo         string `toml:"email"`
 	EmailToPassword string `toml:"email_password"`
 	LogLevel        string `toml:"log_level"`
-	LogFilePath		string `toml:"log_file"`
+	LogFilePath     string `toml:"log_file"`
 }
 
 func NewEnv() *Env {

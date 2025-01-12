@@ -14,9 +14,7 @@ type Sender struct {
 	emailToPassword string
 }
 
-var (
-	errLargeFile = errors.New("file too large XD")
-)
+var errLargeFile = errors.New("file too large XD")
 
 func NewSender(emailFrom, emailPassword string) *Sender {
 	return &Sender{
@@ -26,7 +24,7 @@ func NewSender(emailFrom, emailPassword string) *Sender {
 }
 
 func (send *Sender) SendToSupport(subject, body, who, filename string, data *string) error {
-	if send.sizeOfBase64(data) > 1*1024*1024*1024{
+	if send.sizeOfBase64(data) > 1*1024*1024*1024 {
 		return errLargeFile
 	}
 
@@ -61,6 +59,18 @@ func (send *Sender) SendToEveryPerson(head, body string, people []string) error 
 		"\r\n\n" +
 		body + "\r\n"
 	err := smtp.SendMail("smtp.gmail.com:587", auth, "", people, []byte(msg))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (send *Sender) SendToPerson(head, body string, person []string) error {
+	auth := smtp.PlainAuth("hitler", send.emailTo, send.emailToPassword, "smtp.gmail.com")
+	msg := "Subject: " + head +
+		"\r\n\n" +
+		body + "\r\n"
+	err := smtp.SendMail("smtp.gmail.com:587", auth, "", person, []byte(msg))
 	if err != nil {
 		return err
 	}

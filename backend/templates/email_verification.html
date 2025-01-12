@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyEcho | email-verification</title>
+</head>
+<body>
+    <form id="submit_email">
+        <label for="">Write email code here: </label>
+        <input type="number" id="barcode">
+        <button type="submit">submit</button>
+    </form>
+    <script>
+        document.getElementById("submit_email").addEventListener("submit", async (e)=>{
+            e.preventDefault();
+            const barcode = parseInt(document.getElementById("barcode").value, 10);
+            const response = await fetch('/register/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ barcode: barcode }),
+            });
+
+            if (response.ok) {
+                alert("Norm")
+                replace
+            } else {
+                const error = await response.json();
+                alert('Error finding login: ' + error["error"]);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-
 	"text/template"
 
 	"golang.org/x/time/rate"
@@ -32,7 +31,7 @@ var (
 	errSessionTimeOut = errors.New("your session time out")
 	errTooManyRequest = errors.New("Too many request dude")
 
-	limiter = rate.NewLimiter(1, 3)
+	limiter        = rate.NewLimiter(1, 3)
 	limiterSupport = rate.NewLimiter(1, 1)
 )
 
@@ -50,7 +49,7 @@ func NewControllerPost(storage *storage.Storage, session sessions.Store, logger 
 	}
 }
 
-func (ctrl *ControllerPost) CreatePost() http.HandlerFunc {
+func (ctrl *ControllerPost) CreatePostPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		u := r.Context().Value(ctxKeyUser).(*model.User)
 
@@ -119,9 +118,7 @@ func (ctrl *ControllerPost) CreatePostReal() http.HandlerFunc {
 }
 
 func (ctrl *ControllerPost) GetPost() http.HandlerFunc {
-
 	return func(w http.ResponseWriter, r *http.Request) {
-		
 		login := r.URL.Query().Get("author")
 		sortDate := r.URL.Query().Get("sort")
 		if sortDate != "ASC" && sortDate != "DESC" {
@@ -151,5 +148,4 @@ func (ctrl *ControllerPost) GetPost() http.HandlerFunc {
 		})
 		ctrl.logger.Info("handle /getPost ", r.URL)
 	}
-
 }
