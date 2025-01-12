@@ -63,7 +63,6 @@ func TestEncryptPassword(t *testing.T) {
 	password = strings.Repeat("0", 100)
 	_, err = Encrypt(password)
 	assert.NotNil(t, err)
-
 }
 
 func createuser(id int, email, login, password string) User {
