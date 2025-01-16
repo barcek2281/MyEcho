@@ -27,13 +27,13 @@ func TestSupport(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to connect to Selenium server: %v", err)
 	}
-	defer wd.Quit()
+	defer wd.Quit() 
 
 	if err := wd.Get("http://localhost:8080/support"); err != nil {
 		t.Fatalf("Failed to open site, err: %v", err)
 	}
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(2 * time.Second) // sleep for load
 
 	problemTextField, err := wd.FindElement(selenium.ByCSSSelector, "#problemText")
 	if err != nil {

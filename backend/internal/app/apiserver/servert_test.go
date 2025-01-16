@@ -34,7 +34,27 @@ func TestHello(t *testing.T) {
 	}
 }
 
+func TestHelloPost(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/hello", nil)
+	w := httptest.NewRecorder()
 
+	config := NewConfig()
+	config.LogFilePath = "../../../log/info.log"
+	store := storage.New(config.DataBaseURL)
+	if err := store.Open(); err != nil { // Ping db
+		assert.NotNil(t, err)
+	}
+	session := sessions.NewCookieStore([]byte(config.CookieKey))
+
+	ctrl := controller.NewController(store, session, logrus.New(), nil)
+
+	ctrl.HandleHelloPost()(w, req)
+
+	res := w.Result()
+	if res.StatusCode != 400 {
+		t.Error("doesnt work")
+	}
+}
 
 func ReturnController(logfilePath string) *controller.Controller {
 	config := NewConfig()
