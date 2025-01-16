@@ -366,6 +366,7 @@ func (ctrl *Controller) SupportUser() http.HandlerFunc {
 			utils.Error(w, r, http.StatusTooManyRequests, errTooManyRequest)
 			return
 		}
+
 		req := Request{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			ctrl.logger.Error(err)
@@ -384,8 +385,11 @@ func (ctrl *Controller) SupportUser() http.HandlerFunc {
 				}
 			}
 		}
-
-		err = ctrl.sender.SendToSupport(req.TypeProblem, req.Text, email, req.Filename, &req.File)
+		if req.Filename == "" {
+			err = ctrl.sender.SendSuppot(req.TypeProblem, req.Text, email)
+		} else {
+			err = ctrl.sender.SendToSupportWithFile(req.TypeProblem, req.Text, email, req.Filename, &req.File)
+		}
 		if err != nil {
 			ctrl.logger.Error(err)
 			utils.Error(w, r, http.StatusBadRequest, err)

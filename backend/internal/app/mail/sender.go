@@ -23,8 +23,18 @@ func NewSender(emailFrom, emailPassword string) *Sender {
 	}
 }
 
-func (send *Sender) SendToSupport(subject, body, who, filename string, data *string) error {
-	if send.sizeOfBase64(data) > 1*1024*1024*1024 {
+func (send *Sender) SendSuppot(subject, body, who string) error {
+	auth := smtp.PlainAuth("lol", send.emailTo, send.emailToPassword, "smtp.gmail.com")
+	message := "Subject: " + subject + "\n" + body
+	err := smtp.SendMail("smtp.gmail.com:587", auth, "", []string{send.emailTo}, []byte(message))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (send *Sender) SendToSupportWithFile(subject, body, who, filename string, data *string) error {
+	if send.sizeOfBase64(data) > 1*1024*1024 {
 		return errLargeFile
 	}
 
