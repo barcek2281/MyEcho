@@ -245,6 +245,7 @@ func (ctrl *Controller) EmailVerifyUser() http.HandlerFunc {
 			utils.Error(w, r, http.StatusBadGateway, errIncorrectPasswordOrEmail)
 			return
 		}
+		ctrl.storage.User().Activate(user_id)
 		session.Values["role"] = roleUser
 		if err := ctrl.session.Save(r, w, session); err != nil {
 			ctrl.logger.Warn(err)
@@ -293,6 +294,13 @@ func (ctrl *Controller) LoginUser() http.HandlerFunc {
 			return
 		}
 
+		err = ctrl.storage.User().Activate(u.ID)
+		if err != nil {
+			utils.Error(w, r, 403, err)
+			ctrl.logger.Warn("cannot login without email verifycation", err)
+			return
+		}
+
 		session, err := ctrl.session.New(r, sessionName)
 		if err != nil {
 			utils.Error(w, r, 404, err)
@@ -306,7 +314,6 @@ func (ctrl *Controller) LoginUser() http.HandlerFunc {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 		ctrl.logger.Info("handle /login POST")
-		// http.Redirect(w, r, "/", http.StatusSeeOther)
 		utils.Response(w, r, 201, nil)
 	}
 }
@@ -326,7 +333,6 @@ func (ctrl *Controller) LogoutHandler() http.HandlerFunc {
 		err = session.Save(r, w)
 		if err != nil {
 			ctrl.logger.Warn("Failed to delete session: ", err)
-			// ctrl.Error(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -360,6 +366,7 @@ func (ctrl *Controller) SupportUser() http.HandlerFunc {
 			utils.Error(w, r, http.StatusTooManyRequests, errTooManyRequest)
 			return
 		}
+
 		req := Request{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			ctrl.logger.Error(err)
@@ -378,8 +385,11 @@ func (ctrl *Controller) SupportUser() http.HandlerFunc {
 				}
 			}
 		}
-
-		err = ctrl.sender.SendToSupport(req.TypeProblem, req.Text, email, req.Filename, &req.File)
+		if req.Filename == "" {
+			err = ctrl.sender.SendSuppot(req.TypeProblem, req.Text, email)
+		} else {
+			err = ctrl.sender.SendToSupportWithFile(req.TypeProblem, req.Text, email, req.Filename, &req.File)
+		}
 		if err != nil {
 			ctrl.logger.Error(err)
 			utils.Error(w, r, http.StatusBadRequest, err)

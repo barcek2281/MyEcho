@@ -1,9 +1,10 @@
 CREATE TABLE users (
     id BIGSERIAL NOT NULL PRIMARY KEY,
-    email varchar not null unique,
+    email varchar(255) not null unique,
     login varchar not null,
     password varchar not null,
-    date TIMESTAMP NOT NULL DEFAULT NOW()
+    date TIMESTAMP NOT NULL DEFAULT NOW(),
+    is_active BOOLEAN DEFAULT false
 );
 
 CREATE TABLE barcode (

@@ -130,3 +130,30 @@ func (r *UserRepository) GetAllWithoutLimit() ([]*model.User, error) {
 	}
 	return users, nil
 }
+
+func (r *UserRepository) Activate(id int) error {
+	result, err := r.storage.db.Exec("UPDATE users SET is_active = true WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+	// Проверяем, сколько строк было обновлено
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("not found user")
+	}
+
+	return nil
+}
+
+func (r *UserRepository) IsActive(id int) (*model.User, error) {
+	u := &model.User{}
+	if err := r.storage.db.QueryRow("SELECT id, email, login, password FROM users WHERE id = $1 AND is_active = true", id).Scan(&u.ID,
+		&u.Email, &u.Login, &u.Password); err != nil {
+		return nil, err
+	}
+	return u, nil
+}

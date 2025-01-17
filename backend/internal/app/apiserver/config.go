@@ -13,8 +13,8 @@ type Config struct {
 
 func NewConfig() *Config {
 	return &Config{
-		BinAddr:         ":8080",
-		DataBaseURL:     "postgres://postgres:admin@localhost:5432/api",
+		BinAddr:         "127.0.0.1:8080",
+		DataBaseURL:     "postgres://postgres:admin@localhost:5432/restapi_dev",
 		CookieKey:       "Cookie",
 		EmailTo:         "sabdpp17@gmail.com",
 		EmailToPassword: "123 456 789 0123",

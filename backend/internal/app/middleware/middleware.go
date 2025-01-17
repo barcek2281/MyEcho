@@ -46,7 +46,7 @@ func (m *Middleware) AuthenicateUser(next http.Handler) http.Handler {
 			utils.Error(w, r, http.StatusBadGateway, errYouCantBeHere)
 			return
 		}
-		u, err := m.storage.User().FindById(id.(int))
+		u, err := m.storage.User().IsActive(id.(int))
 		if err != nil {
 			utils.Error(w, r, http.StatusBadGateway, errYouCantBeHere)
 			return
