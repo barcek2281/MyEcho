@@ -2,7 +2,6 @@ package apiserver
 
 import (
 	"net/http"
-	"os"
 
 	"github.com/barcek2281/MyEcho/internal/app/mail"
 	storage "github.com/barcek2281/MyEcho/internal/app/store"
@@ -36,12 +35,13 @@ func Start(config *Config) error {
 	if err != nil {
 		return err
 	}
-	f, err := os.OpenFile(config.LogFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o666)
-	if err != nil {
-		return err
-	} else {
-		logger.Out = f
-	}
+	// f, err := os.OpenFile(config.LogFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o666)
+	// if err != nil {
+	// 	return err
+	// } else {
+	// 	logger.Out = f
+	// }
+	
 
 	logger.SetLevel(level)
 
