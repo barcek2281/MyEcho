@@ -44,6 +44,7 @@ COPY ./migrations/1.down.sql /root/migrations/1.down.sql
 
 # Expose the application port
 EXPOSE 8080
+RUN go test -v ./...
 
 # Run the binary
 CMD ["./MyEcho"]
