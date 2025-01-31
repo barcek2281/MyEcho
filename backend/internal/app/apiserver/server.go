@@ -14,12 +14,10 @@ import (
 
 type server struct {
 	router          *mux.Router
-	Logger          *logrus.Logger
-	storage         *storage.Storage
-	Session         sessions.Store
 	controller      *controller.Controller
 	controllerPost  *controller.ControllerPost
 	controllerAdmin *controller.ControllerAdmin
+	controllerWs    *controller.ControllerWS
 	middleware      *middleware.Middleware
 	Env             Env
 }
@@ -34,12 +32,10 @@ const (
 func newServer(store *storage.Storage, session sessions.Store, logger *logrus.Logger, sender *mail.Sender) *server {
 	s := &server{
 		router:          mux.NewRouter(),
-		Logger:          logger,
-		storage:         store,
-		Session:         session,
 		controller:      controller.NewController(store, session, logger, sender),
 		controllerPost:  controller.NewControllerPost(store, session, logger),
 		controllerAdmin: controller.NewControllerUser(store, session, logger, sender),
+		controllerWs:    controller.NewControllerWS(logger, session, store),
 		middleware:      middleware.NewMiddleware(session, store),
 	}
 
@@ -60,8 +56,8 @@ func (s *server) ConfigureRouter() {
 	s.router.HandleFunc("/hello", s.controller.HandleHelloPost()).Methods("POST")
 
 	// // Надо будет поменять название функции
-	s.router.HandleFunc("/register", s.controller.RegisterUser()).Methods("POST")
 	s.router.HandleFunc("/register", s.controller.RegisterPage()).Methods("GET")
+	s.router.HandleFunc("/register", s.controller.RegisterUser()).Methods("POST")
 	s.router.HandleFunc("/register/verify", s.controller.EmailVerifyPage()).Methods("GET")
 	s.router.HandleFunc("/register/verify", s.controller.EmailVerifyUser()).Methods("POST")
 
@@ -71,6 +67,7 @@ func (s *server) ConfigureRouter() {
 
 	s.router.HandleFunc("/logout", s.controller.LogoutHandler())
 
+	// admin page
 	admin := s.router.PathPrefix("/admin").Subrouter()
 	admin.PathPrefix("/static/").Handler(http.StripPrefix("/admin/static/", fs))
 	admin.Use(s.middleware.AuthenicateAdmin)
@@ -86,10 +83,16 @@ func (s *server) ConfigureRouter() {
 	// Лучше его так оставить
 	s.router.HandleFunc("/getPost", s.controllerPost.GetPost()).Methods("GET")
 
+	// post
 	postUrl := s.router.PathPrefix("/post").Subrouter()
 	postUrl.Use(s.middleware.AuthenicateUser)
 	postUrl.HandleFunc("/createPost", s.controllerPost.CreatePostPage()).Methods("GET")
 	postUrl.HandleFunc("/createPost", s.controllerPost.CreatePostReal()).Methods("POST")
+
+	// TODO: WS
+	s.router.HandleFunc("/ws", s.controllerWs.Handler())
+	s.router.HandleFunc("/chats", s.controllerWs.ChatsPage()).Methods("GET")
+	go s.controllerWs.WriteToClients()
 }
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

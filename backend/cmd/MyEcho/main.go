@@ -50,8 +50,11 @@ func main() {
 	// } else {
 	// 	fmt.Println("Migrations applied successfully!")
 	// }
-
-	fmt.Println("http://localhost" + config.BinAddr)
+	if len(config.BinAddr) < 6 {
+		fmt.Println("http://localhost" + config.BinAddr)
+	} else {
+		fmt.Println("http://" + config.BinAddr)
+	}
 
 	if err := apiserver.Start(config); err != nil {
 		log.Fatal(err)
