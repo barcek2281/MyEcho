@@ -4,14 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyEcho | email-verification</title>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
+    <div class="container">
     <form id="submit_email">
         <label for="">Write email code here: </label>
         <input type="number" id="barcode">
         <button type="submit">submit</button>
     </form>
     <a href="/">Main page</a>
+    </div>
     <script>
         document.getElementById("submit_email").addEventListener("submit", async (e)=>{
             e.preventDefault();
