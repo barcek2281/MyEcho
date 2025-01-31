@@ -29,27 +29,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// fmt.Println(config.DataBaseURL)
-	// m, err := migrate.New(
-	// 	"./migrations", // Путь к папке с миграциями
-	// 	config.DataBaseURL,  // Строка подключения
-	// )
-
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// fmt.Println("Applying migrations...")
-	// if err := m.Up(); err != nil {
-	// 	if err.Error() == "no change" {
-	// 		fmt.Println("No migrations to apply")
-	// 	} else {
-	// 		log.Fatal(err)
-	// 	}
-	// } else {
-	// 	fmt.Println("Migrations applied successfully!")
-	// }
 	if len(config.BinAddr) < 6 {
 		fmt.Println("http://localhost" + config.BinAddr)
 	} else {
