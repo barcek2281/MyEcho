@@ -13,7 +13,7 @@ body {
     width: 15vh;
     height: 100vh;
     background: #1e1e2f;
-    padding: 20px;
+    padding: 1vh;
     box-shadow: 4px 0 8px rgba(0, 0, 0, 0.2);
     overflow-y: auto;
     position: fixed;
@@ -23,7 +23,7 @@ body {
 
 #chat {
     flex: 1;
-    margin-left: 20pv;
+    margin-left: 20vh;
     padding: 20px;
 }
 
