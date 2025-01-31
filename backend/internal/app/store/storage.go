@@ -14,6 +14,7 @@ type Storage struct {
 	postRepository    *PostRepository
 	adminRepository   *AdminRepository
 	barcodeRepository *BarcodeRepository
+	msgRepository     *MsgRepository
 }
 
 // New Config
@@ -74,4 +75,13 @@ func (s *Storage) Barcode() *BarcodeRepository {
 		}
 	}
 	return s.barcodeRepository
+}
+
+func (s *Storage) Msg() *MsgRepository {
+	if s.msgRepository == nil {
+		s.msgRepository = &MsgRepository{
+			store: s,
+		}
+	}
+	return s.msgRepository
 }
