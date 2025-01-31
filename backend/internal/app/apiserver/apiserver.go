@@ -2,7 +2,6 @@ package apiserver
 
 import (
 	"net/http"
-	"os"
 
 	"github.com/barcek2281/MyEcho/internal/app/mail"
 	storage "github.com/barcek2281/MyEcho/internal/app/store"
@@ -27,7 +26,7 @@ func Start(config *Config) error {
 
 	logger := logrus.New()
 	logger.SetFormatter(&prefixed.TextFormatter{
-		DisableColors:   true,
+		DisableColors:   false,
 		TimestampFormat: "2006-01-02 15:04:05",
 		FullTimestamp:   true,
 		ForceFormatting: true,
@@ -36,18 +35,9 @@ func Start(config *Config) error {
 	if err != nil {
 		return err
 	}
-	f, err := os.OpenFile(config.LogFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o666)
-	if err != nil {
-		return err
-	} else {
-		logger.Out = f
-	}
 
 	logger.SetLevel(level)
-
 	sender := mail.NewSender(config.EmailTo, config.EmailToPassword)
-
 	s := newServer(store, session, logger, sender)
-	// return http.ListenAndServe("192.168.42.101"+config.BinAddr, s)
 	return http.ListenAndServe(config.BinAddr, s)
 }

@@ -18,7 +18,7 @@ func TestMainPage(t *testing.T) {
 	if err := wd.Get(url); err != nil {
 		t.Fatalf("Failed to get page, get: %v", err)
 	}
-	// Rest of the test.../.
+	// Rest of the test.../.info.log
 }
 
 func TestSupport(t *testing.T) {
