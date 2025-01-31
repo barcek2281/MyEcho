@@ -20,6 +20,8 @@
         </select>
         <br><br>
         <textarea id="problemText" placeholder="write your problem (max 500 char)" rows="10" cols="100" maxlength="800" required></textarea>
+        <label for="fle">Select a file (limit 1 mb):</label>
+        <input type="file" id="myFile" name="fle">
         <br>
         <p style="color:gray">*if you sending email without authentication, your email will be anonymous</p>
         <p id="result"></p>
@@ -29,32 +31,79 @@
     <p>back to <a href="/">Main page</a></p>
 
 </div>
-
     <script>
         document.getElementById("support").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const problemText = document.getElementById("problemText").value;
-            const problemType = document.getElementById("problemType").value;
-            const result = document.getElementById("result")
+    e.preventDefault();
+    const problemText = document.getElementById("problemText").value;
+    const problemType = document.getElementById("problemType").value;
+    const problemFile = document.getElementById("myFile").files[0];
+    
+    const result = document.getElementById("result");
+    
+    let requestData = {
+        type: problemType,
+        text: problemText,
+    };
 
+    // Если файл выбран, читаем его
+    if (problemFile) {
+        const reader = new FileReader();
+        reader.readAsDataURL(problemFile);
+        
+        reader.onload = async function () {
+            requestData.filename = problemFile.name;
+            requestData.data = reader.result;
+
+            try {
+                const response = await fetch('/support', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
+                });
+
+                // Обработка ответа
+                if (response.ok) {
+                    result.textContent = "correct: mail send";
+                    console.log("OK");
+                } else {
+                    const data = await response.json();
+                    result.textContent = "error: " + data["error"];
+                }
+            } catch (error) {
+                console.log('Error: ', error);
+                result.textContent = "error: Something happened wrong";
+            }
+        };
+
+        reader.onerror = function (error) {
+            console.log('Error reading file: ', error);
+            result.textContent = "error: Something happened wrong while reading the file";
+        };
+
+    } else {
+        // Если файл не выбран, сразу отправляем запрос без файла
+        try {
             const response = await fetch('/support', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    type: problemType,
-                    text: problemText,
-                })
+                body: JSON.stringify(requestData)
             });
 
+            // Обработка ответа
             if (response.ok) {
-                result.textContent = "correct: mail send"
+                result.textContent = "correct: mail send";
                 console.log("OK");
-            }else {
-                result.textContent = "error: Something happen wrong"
-                // console.log("not OK");
+            } else {
+                const data = await response.json();
+                result.textContent = "error: " + data["error"];
             }
-        });
+        } catch (error) {
+            console.log('Error: ', error);
+            result.textContent = "error: Something happened wrong";
+        }
+    }
+});
+
     </script>
-    
 </body>
 </html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; }
+        #users { width: 200px; border-right: 1px solid #000; padding: 10px; }
+        #chat { flex-grow: 1; padding: 10px; }
+        #messages { height: 300px; overflow-y: auto; border: 1px solid #000; padding: 5px; }
+    </style>
+</head>
+<body>
+    <div id="users">
+        <h3>Users</h3>
+        <p id="RealUsername">{{ .Login }}</p>
+        <ul id="userList"></ul>
+    </div>
+    <div id="chat">
+        <h3>Chat</h3>
+        <div id="messages"></div>
+        <input type="text" id="messageInput" placeholder="Type a message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        const socket = new WebSocket('ws://' + window.location.host + '/ws');
+        name = document.getElementById("RealUsername").textContent;
+
+        console.log("Socket connected");
+        console.log(name)
+
+        let currentChatUser = null;
+        
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log(data)
+            if (data.type === 'users') {
+                updateUserList(data.users);
+            } else if (data.type === 'message' && data.from === currentChatUser) {
+                displayMessage(data.from, data.message);
+            }
+        };
+
+        function updateUserList(users) {
+            const userList = document.getElementById("userList");
+            userList.innerHTML = "";
+            users.forEach(user => {
+                const li = document.createElement("li");
+                li.textContent = user;
+                li.style.cursor = "pointer";
+                li.onclick = () => selectUser(user);
+                userList.appendChild(li);
+            });
+        }
+
+        function selectUser(user) {
+            currentChatUser = user;
+            document.getElementById("messages").innerHTML = "<b>Chat with " + user + "</b><br>";
+        }
+
+        function sendMessage() {
+            if (!currentChatUser) {
+                alert("Select a user to chat with");
+                return;
+            }
+            const input = document.getElementById("messageInput");
+            const message = input.value;
+            if (message.trim() === "") return;
+            socket.send(JSON.stringify({ type: 'message', to: currentChatUser, from:name, message: message }));
+            displayMessage("You", message);
+            input.value = "";
+        }
+
+        function displayMessage(from, message) {
+            const messagesDiv = document.getElementById("messages");
+            messagesDiv.innerHTML += `<p><b>${from}:</b> ${message}</p>`;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+    </script>
+</body>
+</html>

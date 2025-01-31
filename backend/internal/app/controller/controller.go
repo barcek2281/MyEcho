@@ -3,25 +3,31 @@ package controller
 import (
 	"encoding/json"
 	"errors"
-	"html/template"
-	"net/http"
 	"fmt"
+	"html/template"
+	"math/rand"
+	"net/http"
+	"strconv"
+
+	"github.com/barcek2281/MyEcho/internal/app/mail"
 	"github.com/barcek2281/MyEcho/internal/app/model"
 	storage "github.com/barcek2281/MyEcho/internal/app/store"
-	"github.com/barcek2281/MyEcho/mail"
 	"github.com/barcek2281/MyEcho/pkg/utils"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
 )
 
 const (
-	sessionName = "MyEcho"
-	sessionAdmin = "IsAdmin"
+	sessionName      = "MyEcho"
+	sessionAdmin     = "IsAdmin"
+	roleUser         = "user"
+	roleUnauthorized = "unauthorized"
+	roleAdmin        = "admin"
 )
 
 var (
 	errIncorrectPasswordOrEmail = errors.New("Incorrect password or email")
-	errYouDontHaveUsers = errors.New("YOU DONT HAVE USERS DUMBASS")
+	errYouDontHaveUsers         = errors.New("YOU DONT HAVE USERS DUMBASS")
 )
 
 type Controller struct {
@@ -41,7 +47,6 @@ func NewController(storage *storage.Storage, session sessions.Store, logger *log
 }
 
 func (ctrl *Controller) MainPage() http.HandlerFunc {
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		tmpl, err := template.ParseFiles("./templates/index.html")
 		if err != nil {
@@ -58,15 +63,14 @@ func (ctrl *Controller) MainPage() http.HandlerFunc {
 			userID, ok := session.Values["user_id"].(int)
 			if !ok {
 				ctrl.logger.Warn("session timeout!", err)
-				} else {
-					user, err = ctrl.storage.User().FindById(userID)
-					if err != nil {
-						ctrl.logger.Warn("warn lol )", err)
-					}
+			} else {
+				user, err = ctrl.storage.User().FindById(userID)
+				if err != nil {
+					ctrl.logger.Warn("warn lol )", err)
 				}
 			}
-			
-		
+		}
+
 		data := map[string]interface{}{
 			"user": user,
 		}
@@ -83,7 +87,6 @@ func (ctrl *Controller) MainPage() http.HandlerFunc {
 
 func (ctrl *Controller) HandleHello() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		response := map[string]string{
 			"status":  "OK",
 			"message": "Hello World!",
@@ -103,7 +106,6 @@ func (ctrl *Controller) HandleHello() http.HandlerFunc {
 			ctrl.logger.Error(err)
 			http.Error(w, "cannot write json file", http.StatusInternalServerError)
 		}
-
 	}
 }
 
@@ -144,7 +146,7 @@ func (ctrl *Controller) RegisterPage() http.HandlerFunc {
 			ctrl.logger.Error(err)
 			return
 		}
-		ctrl.logger.Info("handle /register GET")
+		
 	}
 }
 
@@ -182,13 +184,76 @@ func (ctrl *Controller) RegisterUser() http.HandlerFunc {
 		}
 
 		session.Values["user_id"] = u.ID
+		// session.Values["role"] = roleUnauthorized
+
 		if err := ctrl.session.Save(r, w, session); err != nil {
 			utils.Error(w, r, 404, err)
 			return
 		}
-		utils.Response(w, r, http.StatusCreated, map[string]string{"status": "Succesfully, created user"})
 
+		randomInt := rand.Intn(10000)
+		bar := model.Barcode{
+			User_id: u.ID,
+			Barcode: randomInt,
+		}
+		if err := ctrl.storage.Barcode().Create(&bar); err != nil {
+			ctrl.logger.Warn(err)
+			utils.Error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		go ctrl.sender.SendToPerson("Your code", "your code: "+strconv.Itoa(randomInt), []string{u.Email})
+		utils.Response(w, r, http.StatusCreated, map[string]string{"status": "Succesfully, created user"})
 		ctrl.logger.Info("handle /register POST")
+	}
+}
+
+func (ctrl *Controller) EmailVerifyPage() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		tmp, err := template.ParseFiles("./templates/email_verification.html")
+		if err != nil {
+			ctrl.logger.Warn(err)
+			return
+		}
+		tmp.Execute(w, nil)
+		ctrl.logger.Info("handle /register/verify GET")
+	}
+}
+
+func (ctrl *Controller) EmailVerifyUser() http.HandlerFunc {
+	type Request struct {
+		Barcode int `json:"barcode"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req := Request{}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			ctrl.logger.Warn(err)
+			utils.Error(w, r, http.StatusBadGateway, err)
+			return
+		}
+		session, err := ctrl.session.Get(r, SessionName)
+		if err != nil {
+			ctrl.logger.Warn(err)
+			utils.Error(w, r, http.StatusBadGateway, err)
+			return
+		}
+
+		user_id := session.Values["user_id"].(int)
+		barcode, err := ctrl.storage.Barcode().FindByUserId(user_id)
+		if barcode.Barcode != req.Barcode {
+			ctrl.logger.Warn(err)
+			utils.Error(w, r, http.StatusBadGateway, errIncorrectPasswordOrEmail)
+			return
+		}
+		ctrl.storage.User().Activate(user_id)
+		session.Values["role"] = roleUser
+		if err := ctrl.session.Save(r, w, session); err != nil {
+			ctrl.logger.Warn(err)
+			utils.Error(w, r, 404, err)
+			return
+		}
+		utils.Response(w, r, 200, nil)
+		ctrl.logger.Info("handle /register/verify POST")
 	}
 }
 
@@ -228,16 +293,28 @@ func (ctrl *Controller) LoginUser() http.HandlerFunc {
 			utils.Error(w, r, 404, errIncorrectPasswordOrEmail)
 			return
 		}
-		session, err := ctrl.session.Get(r, sessionName)
+
+		err = ctrl.storage.User().Activate(u.ID)
+		if err != nil {
+			utils.Error(w, r, 403, err)
+			ctrl.logger.Warn("cannot login without email verifycation", err)
+			return
+		}
+
+		session, err := ctrl.session.New(r, sessionName)
 		if err != nil {
 			utils.Error(w, r, 404, err)
 			return
 		}
 		session.Values["user_id"] = u.ID
-		ctrl.session.Save(r, w, session)
+		session.Values["role"] = roleUser
+		err = ctrl.session.Save(r, w, session)
+
+		w.Header().Set("Access-Control-Allow-Origin", "http://example.com") // Замени на домен клиента
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 		ctrl.logger.Info("handle /login POST")
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		utils.Response(w, r, 201, nil)
 	}
 }
 
@@ -252,15 +329,13 @@ func (ctrl *Controller) LogoutHandler() http.HandlerFunc {
 		}
 
 		// Удаление данных из сессии
-		session.Options.MaxAge = -1 // Устанавливаем MaxAge в -1 для удаления куки
+		session.Options.MaxAge = -1
 		err = session.Save(r, w)
 		if err != nil {
 			ctrl.logger.Warn("Failed to delete session: ", err)
-			// ctrl.Error(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
-		// Перенаправление на главную страницу или страницу входа
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		ctrl.logger.Info("handle /logout ANY")
 	}
@@ -283,15 +358,22 @@ func (ctrl *Controller) SupportUser() http.HandlerFunc {
 	type Request struct {
 		TypeProblem string `json:"type"`
 		Text        string `json:"text"`
+		Filename    string `json:"filename"`
+		File        string `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
+		if !limiterSupport.Allow() {
+			utils.Error(w, r, http.StatusTooManyRequests, errTooManyRequest)
+			return
+		}
+
 		req := Request{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			ctrl.logger.Error(err)
 			utils.Error(w, r, http.StatusBadRequest, err)
 			return
 		}
-		email := ""
+		email := "email: anonymous"
 
 		session, err := ctrl.session.Get(r, sessionName)
 		if err == nil {
@@ -299,15 +381,18 @@ func (ctrl *Controller) SupportUser() http.HandlerFunc {
 			if ok {
 				u, err := ctrl.storage.User().FindById(id)
 				if err == nil {
-					email = u.Email
+					email = "email: " + u.Email
 				}
 			}
 		}
-
-		err = ctrl.sender.SendToSupport(req.TypeProblem, req.Text, email)
+		if req.Filename == "" {
+			err = ctrl.sender.SendSuppot(req.TypeProblem, req.Text, email)
+		} else {
+			err = ctrl.sender.SendToSupportWithFile(req.TypeProblem, req.Text, email, req.Filename, &req.File)
+		}
 		if err != nil {
-			ctrl.logger.Warn(err)
-			utils.Error(w, r, http.StatusNoContent, err)
+			ctrl.logger.Error(err)
+			utils.Error(w, r, http.StatusBadRequest, err)
 			return
 		}
 		ctrl.logger.Info("handle support/ POST")
