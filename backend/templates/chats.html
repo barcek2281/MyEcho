@@ -35,8 +35,12 @@
                 updateUserList(data.users);
             } else if (data.type === 'message' && data.from === currentChatUser) {
                 displayMessage(data.from, data.message);
+            } else if (data.type == "history" && data.from ) {
+                displayMessage(data.from, data.message)
             }
         };
+
+        // function displayHistory()
 
         function updateUserList(users) {
             const userList = document.getElementById("userList");
@@ -52,6 +56,11 @@
 
         function selectUser(user) {
             currentChatUser = user;
+            socket.send(JSON.stringify({
+                type: "history",
+                to: currentChatUser,
+                from: name,
+            }))
             document.getElementById("messages").innerHTML = "<b>Chat with " + user + "</b><br>";
         }
 
@@ -70,7 +79,11 @@
 
         function displayMessage(from, message) {
             const messagesDiv = document.getElementById("messages");
+            if (from == name) {
+                messagesDiv.innerHTML += `<p><b>YOU:</b> ${message}</p>`;
+            }else{
             messagesDiv.innerHTML += `<p><b>${from}:</b> ${message}</p>`;
+            }
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
     </script>

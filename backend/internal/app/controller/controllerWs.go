@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/barcek2281/MyEcho/internal/app/model"
 	storage "github.com/barcek2281/MyEcho/internal/app/store"
 	"github.com/barcek2281/MyEcho/pkg/utils"
 	"github.com/gorilla/sessions"
@@ -130,6 +131,17 @@ func (c *ControllerWS) readFromClient(conn *websocket.Conn) {
 			c.log.Errorf("Error with reading from client ws, %v", err)
 			break
 		}
+
+		var Message model.Messages
+		Message.Receiver = msg.To
+		Message.Sender = msg.From
+		Message.Message = msg.Msg
+		if msg.Type == "message" {
+			err = c.storage.Msg().CreateMessage(&Message)
+			if err != nil {
+				c.log.Fatalf("Error to store data: %v", err)
+			}
+		}
 		c.log.Infof("Message: %+v", msg)
 		c.broadcast <- msg
 	}
@@ -166,8 +178,25 @@ func (c *ControllerWS) WriteToClients() {
 					c.log.Errorf("error with something: %v", err)
 				}
 			}
-		}
-		//c.mutex.RUnlock()
-	}
+		} else if msg.Type == "history" {
+			messages, err := c.storage.Msg().GetMsg(msg.To, msg.From, 5)
+			if err != nil {
+				c.log.Errorf("error with getting messages: %v", err)
+			}
 
+			for conn, login := range c.clients {
+				if login == msg.From {
+					for _, message := range messages {
+						historyMessage, _ := json.Marshal(Message{Type: "history", From: message.Sender, To: message.Receiver, Msg: message.Message})
+						err := conn.WriteMessage(websocket.TextMessage, historyMessage)
+						if err != nil {
+							c.log.Errorf("error with something: %v", err)
+						}
+					}
+				}
+			}
+
+		}
+	}
+	//c.mutex.RUnlock()
 }

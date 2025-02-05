@@ -12,11 +12,13 @@ import (
 )
 
 var (
+	local      bool
 	configPath string
 	logPath    string
 )
 
 func init() {
+	flag.BoolVar(&local, "local", false, "use for start localhost")
 	flag.StringVar(&configPath, "config-path", "configs/apiserver.toml", "config path")
 	flag.StringVar(&logPath, "log-path", "log/info.log", "log path")
 }
@@ -29,11 +31,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if len(config.BinAddr) < 6 {
-		fmt.Println("http://localhost" + config.BinAddr)
-	} else {
-		fmt.Println("http://" + config.BinAddr)
-	}
+	if local{
+		config.BinAddr = "localhost:8080"
+	} 
+	fmt.Printf("http://%v\n", config.BinAddr)
 
 	if err := apiserver.Start(config); err != nil {
 		log.Fatal(err)
