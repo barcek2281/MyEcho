@@ -18,6 +18,7 @@ type server struct {
 	controllerPost  *controller.ControllerPost
 	controllerAdmin *controller.ControllerAdmin
 	controllerWs    *controller.ControllerWS
+	controllerMS    *controller.ControllerMs
 	middleware      *middleware.Middleware
 	Env             Env
 }
@@ -36,7 +37,8 @@ func newServer(store *storage.Storage, session sessions.Store, logger *logrus.Lo
 		controllerPost:  controller.NewControllerPost(store, session, logger),
 		controllerAdmin: controller.NewControllerUser(store, session, logger, sender),
 		controllerWs:    controller.NewControllerWS(logger, session, store),
-		middleware:      middleware.NewMiddleware(session, store),
+		controllerMS: controller.NewControllerMs(store, session, logger),
+		middleware: middleware.NewMiddleware(session, store),
 	}
 
 	s.ConfigureRouter()
@@ -89,10 +91,15 @@ func (s *server) ConfigureRouter() {
 	postUrl.HandleFunc("/createPost", s.controllerPost.CreatePostPage()).Methods("GET")
 	postUrl.HandleFunc("/createPost", s.controllerPost.CreatePostReal()).Methods("POST")
 
-	// TODO: WS
+	// WS, have to add block user and request to speak
 	s.router.HandleFunc("/ws", s.controllerWs.Handler())
 	s.router.HandleFunc("/chats", s.controllerWs.ChatsPage()).Methods("GET")
 	go s.controllerWs.WriteToClients()
+
+	// microservice
+	s.router.HandleFunc("/payment", s.controllerMS.PaymentPage()).Methods("GET")
+	s.router.HandleFunc("/payment", s.controllerMS.PaymentPost()).Methods("POST")
+	s.router.HandleFunc("/process-payment", s.controllerMS.ProcessPaymentPost().ServeHTTP).Methods("POST")	
 }
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

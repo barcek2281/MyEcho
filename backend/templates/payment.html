@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Подписка MyEcho</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex items-center justify-center h-screen bg-gray-100">
+    <div class="bg-white p-6 rounded-lg shadow-lg text-center" id="subscriptionPanel">
+        <h1 class="text-2xl font-bold">Подписка на MyEcho</h1>
+        <p class="text-gray-600 mt-2">Получите доступ ко всем функциям за 5$/мес</p>
+        <button id="buyButton" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Купить подписку</button>
+        <p id="message" class="mt-2 text-sm text-gray-600"></p>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-lg text-center hidden" id="paymentPanel">
+        <h2 class="text-xl font-bold">Payment</h2>
+        <p class="text-gray-600 mt-2">Введите данные вашей карты</p>
+        <input type="text" id="cardNumber" placeholder="Номер карты" class="border p-2 mt-2 w-full rounded">
+        <input type="text" id="expiryDate" placeholder="Срок действия (MM/YY)" class="border p-2 mt-2 w-full rounded">
+        <input type="text" id="cvv" placeholder="CVV" class="border p-2 mt-2 w-full rounded">
+        <input type="text" id="Name" placeholder="Your name" class="border p-2 mt-2 w-full rounded">
+        <input type="text" id="Email" placeholder="write down your email" class="border p-2 mt-2 w-full rounded">
+        <button id="payButton" class="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Оплатить</button>
+        <p id="paymentMessage" class="mt-2 text-sm text-gray-600"></p>
+    </div>
+
+    <script>
+        document.getElementById('buyButton').addEventListener('click', async () => {
+            const response = await fetch('/payment', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id:"1", plan: 'monthly', price: 5 })
+            });
+            const result = await response.json();
+            if (response.ok) {
+                document.getElementById('message').innerText = result.transaction_id;
+                console.log(result.transaction_id)
+                document.getElementById('subscriptionPanel').classList.add('hidden');
+                document.getElementById('paymentPanel').classList.remove('hidden');
+            } else {
+                document.getElementById('message').innerText = result.transaction_id || 'error with transaction';
+            }
+        });
+
+        document.getElementById('payButton').addEventListener('click', async () => {
+            const cardData = {
+                id: document.getElementById("message").innerText,
+                cardNumber: document.getElementById('cardNumber').value,
+                expiryDate: document.getElementById('expiryDate').value,
+                cvv: document.getElementById('cvv').value,
+                name: document.getElementById("Name").value,
+                address: document.getElementById("Email").value
+            };
+            
+            const response = await fetch('/process-payment', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(cardData)
+            });
+            if (response.ok) {
+                console.log("OKAY EVERTHING WORK CORRECTLY")
+            }
+            
+            const result = await response.json();
+            document.getElementById('paymentMessage').innerText = result.message || 'Ошибка при оплате';
+        });
+    </script>
+</body>
+</html>
