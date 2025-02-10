@@ -162,11 +162,24 @@ func (c *ControllerMs) ProcessPaymentPost() http.HandlerFunc {
 		}
 
 		mreq := MicroRequest{
-			CardNumber: req.CardNumber,
+			CardNumber:     req.CardNumber,
 			ExpirationDate: req.ExpirationDate,
-			CVV: req.CVV,
-			Name: req.Name,
-			Address: req.Address,
+			CVV:            req.CVV,
+			Name:           req.Name,
+			Address:        req.Address,
+		}
+
+		s, err := c.session.Get(r, sessionName)
+		if err != nil {
+			utils.Error(w, r, http.StatusForbidden, err)
+			return
+		}
+
+		user_id, ok := s.Values["user_id"].(int)
+		if !ok {
+			utils.Error(w, r, http.StatusForbidden, err)
+			c.log.Error("Error:", err)
+			return
 		}
 
 		data, err := json.Marshal(mreq)
@@ -177,11 +190,48 @@ func (c *ControllerMs) ProcessPaymentPost() http.HandlerFunc {
 
 		resp, err := http.Post("http://localhost:8081/process-payment/"+req.ID, "application/json", bytes.NewBuffer(data))
 		if err != nil {
-			utils.Error(w,r,http.StatusInternalServerError, err)
+			utils.Error(w, r, http.StatusInternalServerError, err)
 			return
 		}
-		c.log.Info(req.ID, req.Address)
-		utils.Response(w, r, 200, resp.Body)
+
+		if resp.StatusCode == http.StatusOK {
+			c.log.Info(req.ID, req.Address)
+			err = c.storage.User().Prime(user_id)
+			if err != nil {
+				utils.Error(w, r, http.StatusNotAcceptable, err)
+				return
+			}
+			utils.Response(w, r, 200, resp.Body)
+		} else {
+			c.log.Info(req.ID, req.Address, "cannot make")
+			utils.Response(w, r, http.StatusNotAcceptable, resp.Body)
+		}
 		c.log.Info("Handle /process-payment POST", req.ID)
+	}
+}
+
+func (c *ControllerMs) RemovePrime() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		s, err := c.session.Get(r, sessionName)
+		if err != nil {
+			utils.Error(w, r, http.StatusForbidden, err)
+			return
+		}
+
+		user_id, ok := s.Values["user_id"].(int)
+		if !ok {
+			utils.Error(w, r, http.StatusForbidden, err)
+			c.log.Error("Error:", err)
+			return
+		}
+
+		err = c.storage.User().DeactivatePrime(user_id)
+		if err != nil {
+			utils.Error(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		utils.Response(w, r, http.StatusAccepted, nil)
+		c.log.Infof("hanle /removePrime GET")
 	}
 }

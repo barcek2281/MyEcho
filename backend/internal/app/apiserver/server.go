@@ -100,6 +100,7 @@ func (s *server) ConfigureRouter() {
 	s.router.HandleFunc("/payment", s.controllerMS.PaymentPage()).Methods("GET")
 	s.router.HandleFunc("/payment", s.controllerMS.PaymentPost()).Methods("POST")
 	s.router.HandleFunc("/process-payment", s.controllerMS.ProcessPaymentPost().ServeHTTP).Methods("POST")	
+	s.router.HandleFunc("/removePrime", s.controllerMS.RemovePrime()).Methods("GET")
 }
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

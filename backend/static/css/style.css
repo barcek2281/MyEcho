@@ -212,3 +212,16 @@ a {
         flex-direction: column;
     }
 }
+
+.button-container {
+    display: flex;  /* Enables flexbox */
+    justify-content: center; /* Centers horizontally */
+    align-items: center; /* Centers vertically */
+    height: 100vh; /* Makes the container take the full height of the viewport */
+}
+
+button {
+    position: relative; /* You had this in your original code, but it's not needed for centering */
+    padding: 10px 20px;
+    font-size: 16px;
+}

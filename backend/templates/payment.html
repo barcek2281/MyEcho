@@ -24,6 +24,7 @@
         <input type="text" id="Email" placeholder="write down your email" class="border p-2 mt-2 w-full rounded">
         <button id="payButton" class="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Оплатить</button>
         <p id="paymentMessage" class="mt-2 text-sm text-gray-600"></p>
+        <a href="/">main page</a>
     </div>
 
     <script>
@@ -61,10 +62,11 @@
             });
             if (response.ok) {
                 console.log("OKAY EVERTHING WORK CORRECTLY")
+                document.getElementById('paymentMessage').innerText = "Оплата прошла успешно"
+            }else{
+                ocument.getElementById('paymentMessage').innerText = 'Ошибка при оплате'
             }
             
-            const result = await response.json();
-            document.getElementById('paymentMessage').innerText = result.message || 'Ошибка при оплате';
         });
     </script>
 </body>

@@ -7,6 +7,7 @@ import (
 )
 
 type User struct {
+	Is_prime bool   `json:"is_prime"`
 	ID       int    `json:"id"`
 	Email    string `json:"email"`
 	Login    string `json:"login"`

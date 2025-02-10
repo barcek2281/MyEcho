@@ -27,6 +27,7 @@ type ControllerWS struct {
 	storage   *storage.Storage
 	mutex     *sync.RWMutex
 	clients   map[*websocket.Conn]string
+	invites   map[string]string 
 	broadcast chan *Message
 }
 
@@ -46,6 +47,7 @@ func NewControllerWS(logger *logrus.Logger, session sessions.Store, storage *sto
 		session:   session,
 		storage:   storage,
 		broadcast: make(chan *Message),
+		invites:   make(map[string]string),
 	}
 }
 

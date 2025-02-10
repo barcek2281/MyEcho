@@ -15,10 +15,21 @@
   <div class="container" >
     <h1>MyEcho</h1>
     {{ if .user }}
-    <h5>hello, {{ .user.Login }}</h5>
+      {{ if .user.Is_prime}}
+        <h5>hello, {{ .user.Login }} 👑</h5>
+        <div style="display: flex; justify-content: center; margin-top: 10px;">
+          <button id="RemovePrime" onclick="RemovePrime()" style="padding: 10px 20px; font-size: 16px;">
+              Remove Prime
+          </button>
+      </div>
+      
+      {{ else }}
+        <h5>hello, {{ .user.Login }}</h5>
+      {{ end}}
     <div class="nav">
         <a href="/logout">logout</a>
         <a href="/post/createPost">Create Post</a>
+        <a href="/chats">Chats</a>
     </div>  
     {{ else }}
     <div class="nav">
@@ -51,5 +62,11 @@
       <a href="/payment">payment</a>
     </footer>
     <script src="/static/js/getPage.js"></script>
+    <script>
+      function RemovePrime() {
+        fetch("/removePrime").then(console.log("ok"))
+        location.reload();
+      }
+    </script>
 </body>
 </html>

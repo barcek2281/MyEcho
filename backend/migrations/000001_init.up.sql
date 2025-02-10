@@ -4,7 +4,8 @@ CREATE TABLE users (
     login varchar not null,
     password varchar not null,
     date TIMESTAMP NOT NULL DEFAULT NOW(),
-    is_active BOOLEAN DEFAULT false
+    is_active BOOLEAN DEFAULT false,
+    is_prime BOOLEAN DEFAULT false
 );
 
 CREATE TABLE barcode (

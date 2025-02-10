@@ -43,8 +43,8 @@ func (r *UserRepository) FindByEmail(email string) (*model.User, error) {
 
 func (r *UserRepository) FindById(id int) (*model.User, error) {
 	u := &model.User{}
-	if err := r.storage.db.QueryRow("SELECT id, email, login, password FROM users WHERE id = $1", id).Scan(&u.ID,
-		&u.Email, &u.Login, &u.Password); err != nil {
+	if err := r.storage.db.QueryRow("SELECT id, email, login, password, is_prime FROM users WHERE id = $1", id).Scan(&u.ID,
+		&u.Email, &u.Login, &u.Password, &u.Is_prime); err != nil {
 		return nil, err
 	}
 	return u, nil
@@ -157,3 +157,51 @@ func (r *UserRepository) IsActive(id int) (*model.User, error) {
 	}
 	return u, nil
 }
+
+func (r *UserRepository) Prime(id int) error {
+	result, err := r.storage.db.Exec("UPDATE users SET is_prime = true WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+	// Проверяем, сколько строк было обновлено
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("not found user")
+	}
+
+	return nil
+}
+
+func (r *UserRepository) DeactivatePrime(id int) error {
+	result, err := r.storage.db.Exec("UPDATE users SET is_prime = false WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+	// Проверяем, сколько строк было обновлено
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("not found user")
+	}
+
+	return nil
+}
+
+
+func (r *UserRepository) IsPrime(id int) (*model.User, error) {
+	u := &model.User{}
+	if err := r.storage.db.QueryRow("SELECT id, email, login, password FROM users WHERE id = $1 AND is_prime = true", id).Scan(&u.ID,
+		&u.Email, &u.Login, &u.Password); err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
+
