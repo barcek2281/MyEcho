@@ -69,8 +69,13 @@
                 showInvitePopup(data.from);
             } else if (data.type == "error" && data.from == name) {
                 alert("you have been blocker or didnt send invite");
+                window.reload();
             } else if (data.type == "accept" && data.from == currentChatUser) {
                 alert(`${currentChatUser} accept your invite`);
+            } else if (data.type == "block" && data.to == name) {
+                alert(`you have been banned by ${data.from}`)
+            }else if (data.type == "unblock" && data.to == name) {
+                alert(`you have been unbanned by ${data.from}`)
             }
         };
 
@@ -170,7 +175,7 @@
                 return;
             }
             socket.send(JSON.stringify({
-                type: "block",
+                type: "unblock",
                 to: currentChatUser,
                 from: name
             }));
@@ -182,7 +187,7 @@
             }
 
             socket.send(JSON.stringify({
-                type: "unblock",
+                type: "block",
                 to: currentChatUser,
                 from: name
             }));

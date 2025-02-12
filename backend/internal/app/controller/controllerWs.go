@@ -261,6 +261,26 @@ func (c *ControllerWS) WriteToClients() {
 					}
 				}
 			}
+		} else if msg.Type == "block" {
+			for conn, login := range c.clients {
+				if login == msg.To {
+					notification, _ := json.Marshal(Message{Type: "block", From: msg.From, To: msg.To})
+					err := conn.WriteMessage(websocket.TextMessage, notification)
+					if err != nil {
+						c.log.Errorf("error with something: %v", err)
+					}
+				}
+			}
+		}else if msg.Type == "unblock" {
+			for conn, login := range c.clients {
+				if login == msg.To {
+					notification, _ := json.Marshal(Message{Type: "unblock", From: msg.From, To: msg.To})
+					err := conn.WriteMessage(websocket.TextMessage, notification)
+					if err != nil {
+						c.log.Errorf("error with something: %v", err)
+					}
+				}
+			}
 		}
 	}
 	//c.mutex.RUnlock()
