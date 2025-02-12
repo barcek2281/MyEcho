@@ -27,7 +27,8 @@ type ControllerWS struct {
 	storage   *storage.Storage
 	mutex     *sync.RWMutex
 	clients   map[*websocket.Conn]string
-	invites   map[string]string 
+	invites   map[string]map[string]bool
+	allow     map[string]map[string]bool
 	broadcast chan *Message
 }
 
@@ -47,7 +48,8 @@ func NewControllerWS(logger *logrus.Logger, session sessions.Store, storage *sto
 		session:   session,
 		storage:   storage,
 		broadcast: make(chan *Message),
-		invites:   make(map[string]string),
+		invites:   make(map[string]map[string]bool),
+		allow:     make(map[string]map[string]bool),
 	}
 }
 
@@ -139,10 +141,42 @@ func (c *ControllerWS) readFromClient(conn *websocket.Conn) {
 		Message.Sender = msg.From
 		Message.Message = msg.Msg
 		if msg.Type == "message" {
+			if !(c.allow[msg.From][msg.To] == true && c.allow[msg.To][msg.From] == true) {
+				msg.Type = "error"
+				c.log.Infof("Message: %+v", msg)
+				c.broadcast <- msg
+				continue
+			}
 			err = c.storage.Msg().CreateMessage(&Message)
 			if err != nil {
 				c.log.Fatalf("Error to store data: %v", err)
 			}
+		} else if msg.Type == "invite" {
+			mp, ok := c.allow[msg.From]
+			if !ok || mp == nil {
+				c.allow[msg.From] = make(map[string]bool)
+			}
+			c.allow[msg.From][msg.To] = true
+			
+		} else if msg.Type == "accept" {
+			mp, ok := c.allow[msg.From]
+			if !ok || mp == nil {
+				c.allow[msg.From] = make(map[string]bool)
+			}
+			c.allow[msg.From][msg.To] = true
+			
+		} else if msg.Type == "block" {
+			mp, ok := c.allow[msg.From]
+			if !ok || mp == nil {
+				c.allow[msg.From] = make(map[string]bool)
+			}
+			c.allow[msg.From][msg.To] = false
+		} else if msg.Type == "unblock" {
+			mp, ok := c.allow[msg.From]
+			if !ok || mp == nil {
+				c.allow[msg.From] = make(map[string]bool)
+			}
+			c.allow[msg.From][msg.To] = true
 		}
 		c.log.Infof("Message: %+v", msg)
 		c.broadcast <- msg
@@ -197,7 +231,36 @@ func (c *ControllerWS) WriteToClients() {
 					}
 				}
 			}
-
+		} else if msg.Type == "invite" {
+			for conn, login := range c.clients {
+				if login == msg.To {
+					notification, _ := json.Marshal(Message{Type: "invite", From: msg.From, To: msg.To})
+					err := conn.WriteMessage(websocket.TextMessage, notification)
+					if err != nil {
+						c.log.Errorf("error with something: %v", err)
+					}
+				}
+			}
+		} else if msg.Type == "error" {
+			for conn, login := range c.clients {
+				if login == msg.From {
+					notification, _ := json.Marshal(Message{Type: "error", From: msg.From, To: msg.To})
+					err := conn.WriteMessage(websocket.TextMessage, notification)
+					if err != nil {
+						c.log.Errorf("error with something: %v", err)
+					}
+				}
+			}
+		} else if msg.Type == "accept" {
+			for conn, login := range c.clients {
+				if login == msg.To {
+					notification, _ := json.Marshal(Message{Type: "accept", From: msg.From, To: msg.To})
+					err := conn.WriteMessage(websocket.TextMessage, notification)
+					if err != nil {
+						c.log.Errorf("error with something: %v", err)
+					}
+				}
+			}
 		}
 	}
 	//c.mutex.RUnlock()

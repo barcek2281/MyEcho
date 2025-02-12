@@ -17,7 +17,35 @@
         <div id="messages"></div>
         <input type="text" id="messageInput" placeholder="Type a message...">
         <button onclick="sendMessage()">Send</button>
+        <button onclick="sendInvite()">invite</button>
+        <button onclick="sendBlock()">block</button>
+        <button onclick="sendUnblock()">unblock</button>
     </div>
+    <div id="inviteModal" class="modal">
+        <div class="modal-content">
+            <p style="color:aqua;" id="inviteText"></p>
+            <button onclick="acceptInvite()">Accept</button>
+            <button onclick="declineInvite()">Decline</button>
+        </div>
+    </div>
+    
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            padding: 20px;
+            background: white;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            text-align: center;
+        }
+    </style>
+    
 
     <script>
         const socket = new WebSocket('ws://' + window.location.host + '/ws');
@@ -35,8 +63,14 @@
                 updateUserList(data.users);
             } else if (data.type === 'message' && data.from === currentChatUser) {
                 displayMessage(data.from, data.message);
-            } else if (data.type == "history" && data.from === currentChatUser ) {
+            } else if (data.type == "history") {
                 displayMessage(data.from, data.message)
+            } else if (data.type == "invite" && data.from == currentChatUser) {
+                showInvitePopup(data.from);
+            } else if (data.type == "error" && data.from == name) {
+                alert("you have been blocker or didnt send invite");
+            } else if (data.type == "accept" && data.from == currentChatUser) {
+                alert(`${currentChatUser} accept your invite`);
             }
         };
 
@@ -77,6 +111,15 @@
             input.value = "";
         }
 
+        function sendInvite() {
+            if (!currentChatUser) {
+                alert("Select a user to chat with");
+                return;
+            }
+            socket.send(JSON.stringify({ type: 'invite', to: currentChatUser, from:name}));
+            alert(`you invited msg ${currentChatuser}`)
+        }
+
         function displayMessage(from, message) {
             const messagesDiv = document.getElementById("messages");
             if (from == name) {
@@ -86,6 +129,66 @@
             }
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
+
+        function showInvitePopup(fromUser) {
+            document.getElementById("inviteText").textContent = `${fromUser} wants to chat with you. Accept?`;
+            document.getElementById("inviteModal").style.display = "block";
+
+            // Store the inviter's name for later use
+            window.inviter = fromUser;
+        }
+
+        function acceptInvite() {
+            currentChatUser = window.inviter;
+            document.getElementById("inviteModal").style.display = "none";
+            
+            socket.send(JSON.stringify({
+                type: "accept",
+                to: currentChatUser,
+                from: name
+            }));
+
+            document.getElementById("messages").innerHTML = `<b>Chat with ${currentChatUser}</b><br>`;
+        }
+
+        function declineInvite() {
+            document.getElementById("inviteModal").style.display = "none";
+            if (!currentChatUser) {
+                alert("Select a user to chat with");
+                return;
+            }
+
+            socket.send(JSON.stringify({
+                type: "decline",
+                to: currentChatUser,
+                from: name
+            }));
+        }
+        function sendUnblock() {
+            if (!currentChatUser) {
+                alert("Select a user to chat with");
+                return;
+            }
+            socket.send(JSON.stringify({
+                type: "block",
+                to: currentChatUser,
+                from: name
+            }));
+        }
+        function sendBlock() {
+            if (!currentChatUser) {
+                alert("Select a user to chat with");
+                return;
+            }
+
+            socket.send(JSON.stringify({
+                type: "unblock",
+                to: currentChatUser,
+                from: name
+            }));
+        }
+
+
     </script>
 </body>
 </html>
