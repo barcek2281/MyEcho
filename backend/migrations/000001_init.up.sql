@@ -38,3 +38,9 @@ CREATE TABLE messages (
     msg VARCHAR NOT NULL,
     date TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE allow (
+    id BIGSERIAL NOT NULL PRIMARY KEY,
+    emailFirst VARCHAR NOT NULL,
+    emailSecond VARCHAR NOT NULL
+);

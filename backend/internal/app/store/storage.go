@@ -15,6 +15,7 @@ type Storage struct {
 	adminRepository   *AdminRepository
 	barcodeRepository *BarcodeRepository
 	msgRepository     *MsgRepository
+	allowRepository *AllowRepository
 }
 
 // New Config
@@ -84,4 +85,13 @@ func (s *Storage) Msg() *MsgRepository {
 		}
 	}
 	return s.msgRepository
+}
+
+func (s *Storage) Allow() *AllowRepository {
+	if s.allowRepository == nil {
+		s.allowRepository = &AllowRepository{
+			store: s,
+		}
+	}
+	return s.allowRepository
 }

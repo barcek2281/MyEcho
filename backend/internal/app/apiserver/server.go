@@ -91,7 +91,7 @@ func (s *server) ConfigureRouter() {
 	postUrl.HandleFunc("/createPost", s.controllerPost.CreatePostPage()).Methods("GET")
 	postUrl.HandleFunc("/createPost", s.controllerPost.CreatePostReal()).Methods("POST")
 
-	// WS, have to add block user and request to speak
+	// WS, have to add block user and request to chat
 	s.router.HandleFunc("/ws", s.controllerWs.Handler())
 	s.router.HandleFunc("/chats", s.controllerWs.ChatsPage()).Methods("GET")
 	go s.controllerWs.WriteToClients()

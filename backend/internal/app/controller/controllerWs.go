@@ -27,7 +27,6 @@ type ControllerWS struct {
 	storage   *storage.Storage
 	mutex     *sync.RWMutex
 	clients   map[*websocket.Conn]string
-	invites   map[string]map[string]bool
 	allow     map[string]map[string]bool
 	broadcast chan *Message
 }
@@ -41,6 +40,12 @@ type Message struct {
 }
 
 func NewControllerWS(logger *logrus.Logger, session sessions.Store, storage *storage.Storage) *ControllerWS {
+	allow, err := storage.Allow().GetAllow()
+	if err != nil {
+		logger.Errorf("Error with allow %v", err)
+		allow = make(map[string]map[string]bool)
+	}
+	logger.Infof("Allow: %v", allow)
 	return &ControllerWS{
 		mutex:     &sync.RWMutex{},
 		clients:   make(map[*websocket.Conn]string),
@@ -48,9 +53,9 @@ func NewControllerWS(logger *logrus.Logger, session sessions.Store, storage *sto
 		session:   session,
 		storage:   storage,
 		broadcast: make(chan *Message),
-		invites:   make(map[string]map[string]bool),
-		allow:     make(map[string]map[string]bool),
+		allow:     allow,
 	}
+
 }
 
 func (c *ControllerWS) Handler() http.HandlerFunc {
@@ -157,6 +162,13 @@ func (c *ControllerWS) readFromClient(conn *websocket.Conn) {
 				c.allow[msg.From] = make(map[string]bool)
 			}
 			c.allow[msg.From][msg.To] = true
+			var allow model.Allow
+			allow.EmailFirst = msg.From
+			allow.EmailSecond = msg.To
+			err := c.storage.Allow().AddAllow(allow)
+			if err != nil {
+				c.log.Errorf("error to add: %v", err)
+			}
 			
 		} else if msg.Type == "accept" {
 			mp, ok := c.allow[msg.From]
@@ -164,6 +176,13 @@ func (c *ControllerWS) readFromClient(conn *websocket.Conn) {
 				c.allow[msg.From] = make(map[string]bool)
 			}
 			c.allow[msg.From][msg.To] = true
+			var allow model.Allow
+			allow.EmailFirst = msg.From
+			allow.EmailSecond = msg.To
+			err := c.storage.Allow().AddAllow(allow)
+			if err != nil {
+				c.log.Errorf("error to accept: %v", err)
+			}
 			
 		} else if msg.Type == "block" {
 			mp, ok := c.allow[msg.From]
@@ -171,12 +190,26 @@ func (c *ControllerWS) readFromClient(conn *websocket.Conn) {
 				c.allow[msg.From] = make(map[string]bool)
 			}
 			c.allow[msg.From][msg.To] = false
+			var allow model.Allow
+			allow.EmailFirst = msg.From
+			allow.EmailSecond = msg.To
+			err := c.storage.Allow().RemoveAllow(allow)
+			if err != nil {
+				c.log.Errorf("error to remove: %v", err)
+			}
 		} else if msg.Type == "unblock" {
 			mp, ok := c.allow[msg.From]
 			if !ok || mp == nil {
 				c.allow[msg.From] = make(map[string]bool)
 			}
 			c.allow[msg.From][msg.To] = true
+			var allow model.Allow
+			allow.EmailFirst = msg.From
+			allow.EmailSecond = msg.To
+			err := c.storage.Allow().AddAllow(allow)
+			if err != nil {
+				c.log.Errorf("error to unblock: %v", err)
+			}
 		}
 		c.log.Infof("Message: %+v", msg)
 		c.broadcast <- msg
