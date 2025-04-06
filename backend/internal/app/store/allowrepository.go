@@ -11,7 +11,7 @@ type AllowRepository struct {
 }
 
 func (a *AllowRepository) GetAllow() (map[string]map[string]bool, error) {
-	res := make(map[string]map[string]bool) 
+	res := make(map[string]map[string]bool)
 	query := `SELECT * FROM allow`
 	rows, err := a.store.db.Query(query)
 	if err != nil {

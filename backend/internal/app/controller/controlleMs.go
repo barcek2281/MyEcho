@@ -30,7 +30,6 @@ func NewControllerMs(store *storage.Storage, session sessions.Store, log *logrus
 
 func (c *ControllerMs) PaymentPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		tmpl, err := template.ParseFiles("templates/payment.html")
 		if err != nil {
 			utils.Error(w, r, http.StatusInternalServerError, err)

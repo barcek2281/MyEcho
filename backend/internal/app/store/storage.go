@@ -15,7 +15,7 @@ type Storage struct {
 	adminRepository   *AdminRepository
 	barcodeRepository *BarcodeRepository
 	msgRepository     *MsgRepository
-	allowRepository *AllowRepository
+	allowRepository   *AllowRepository
 }
 
 // New Config

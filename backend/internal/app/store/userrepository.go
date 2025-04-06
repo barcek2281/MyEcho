@@ -194,7 +194,6 @@ func (r *UserRepository) DeactivatePrime(id int) error {
 	return nil
 }
 
-
 func (r *UserRepository) IsPrime(id int) (*model.User, error) {
 	u := &model.User{}
 	if err := r.storage.db.QueryRow("SELECT id, email, login, password FROM users WHERE id = $1 AND is_prime = true", id).Scan(&u.ID,
@@ -203,5 +202,3 @@ func (r *UserRepository) IsPrime(id int) (*model.User, error) {
 	}
 	return u, nil
 }
-
-

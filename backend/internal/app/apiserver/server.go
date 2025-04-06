@@ -37,8 +37,8 @@ func newServer(store *storage.Storage, session sessions.Store, logger *logrus.Lo
 		controllerPost:  controller.NewControllerPost(store, session, logger),
 		controllerAdmin: controller.NewControllerUser(store, session, logger, sender),
 		controllerWs:    controller.NewControllerWS(logger, session, store),
-		controllerMS: controller.NewControllerMs(store, session, logger),
-		middleware: middleware.NewMiddleware(session, store),
+		controllerMS:    controller.NewControllerMs(store, session, logger),
+		middleware:      middleware.NewMiddleware(session, store),
 	}
 
 	s.ConfigureRouter()
@@ -99,7 +99,7 @@ func (s *server) ConfigureRouter() {
 	// microservice
 	s.router.HandleFunc("/payment", s.controllerMS.PaymentPage()).Methods("GET")
 	s.router.HandleFunc("/payment", s.controllerMS.PaymentPost()).Methods("POST")
-	s.router.HandleFunc("/process-payment", s.controllerMS.ProcessPaymentPost().ServeHTTP).Methods("POST")	
+	s.router.HandleFunc("/process-payment", s.controllerMS.ProcessPaymentPost().ServeHTTP).Methods("POST")
 	s.router.HandleFunc("/removePrime", s.controllerMS.RemovePrime()).Methods("GET")
 }
 

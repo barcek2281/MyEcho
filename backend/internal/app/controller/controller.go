@@ -146,7 +146,6 @@ func (ctrl *Controller) RegisterPage() http.HandlerFunc {
 			ctrl.logger.Error(err)
 			return
 		}
-		
 	}
 }
 

@@ -50,7 +50,7 @@ func TestHelloPost(t *testing.T) {
 	ctrl.HandleHelloPost()(w, req)
 
 	res := w.Result()
-	if res.StatusCode != 400{
+	if res.StatusCode != 400 {
 		t.Error("doesnt work")
 	}
 }

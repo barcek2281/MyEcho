@@ -31,9 +31,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if local{
+	if local {
 		config.BinAddr = "localhost:8080"
-	} 
+	}
 	fmt.Printf("http://%v\n", config.BinAddr)
 
 	if err := apiserver.Start(config); err != nil {

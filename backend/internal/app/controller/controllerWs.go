@@ -55,7 +55,6 @@ func NewControllerWS(logger *logrus.Logger, session sessions.Store, storage *sto
 		broadcast: make(chan *Message),
 		allow:     allow,
 	}
-
 }
 
 func (c *ControllerWS) Handler() http.HandlerFunc {
@@ -169,7 +168,7 @@ func (c *ControllerWS) readFromClient(conn *websocket.Conn) {
 			if err != nil {
 				c.log.Errorf("error to add: %v", err)
 			}
-			
+
 		} else if msg.Type == "accept" {
 			mp, ok := c.allow[msg.From]
 			if !ok || mp == nil {
@@ -183,7 +182,7 @@ func (c *ControllerWS) readFromClient(conn *websocket.Conn) {
 			if err != nil {
 				c.log.Errorf("error to accept: %v", err)
 			}
-			
+
 		} else if msg.Type == "block" {
 			mp, ok := c.allow[msg.From]
 			if !ok || mp == nil {
@@ -222,7 +221,7 @@ func (c *ControllerWS) readFromClient(conn *websocket.Conn) {
 
 func (c *ControllerWS) WriteToClients() {
 	for {
-		//c.mutex.RLock()
+		// c.mutex.RLock()
 		msg := <-c.broadcast
 		if msg.Type == "message" {
 			for client := range c.clients {
@@ -304,7 +303,7 @@ func (c *ControllerWS) WriteToClients() {
 					}
 				}
 			}
-		}else if msg.Type == "unblock" {
+		} else if msg.Type == "unblock" {
 			for conn, login := range c.clients {
 				if login == msg.To {
 					notification, _ := json.Marshal(Message{Type: "unblock", From: msg.From, To: msg.To})
@@ -316,5 +315,5 @@ func (c *ControllerWS) WriteToClients() {
 			}
 		}
 	}
-	//c.mutex.RUnlock()
+	// c.mutex.RUnlock()
 }
