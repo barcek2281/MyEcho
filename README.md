@@ -4,8 +4,6 @@ MyEcho is a server-based project developed using Golang to handle HTTP requests 
 
 ## Team Members
 * <a href="https://github.com/barcek2281">Аянат</a>
-* Зуфар
-* Аснали
 
 ## Features
 1. JSON Request/Response Parsing:
